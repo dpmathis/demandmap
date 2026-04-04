@@ -22,8 +22,13 @@ export default function OnboardingPage() {
 
   async function handleComplete() {
     setLoading(true);
-    // TODO: POST to /api/onboarding to create tenant
-    // For now, go straight to map
+    try {
+      await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, orgName, vertical }),
+      });
+    } catch { /* silent — user still gets to map */ }
     router.push("/map");
   }
 

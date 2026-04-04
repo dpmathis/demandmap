@@ -7,20 +7,34 @@ import { NYC_CENTER, NYC_DEFAULT_ZOOM } from "@/app/lib/constants";
 import type { MapFilters } from "@/app/map/page";
 import { WeatherWidget } from "./WeatherWidget";
 
-interface MapCanvasProps {
-  filters: MapFilters;
+export interface BlockClickData {
+  geoid: string;
+  ntaName: string | null;
+  borough: string | null;
+  demandScore: number | null;
+  compositeScore: number | null;
+  lat: number;
+  lng: number;
+  timeWindow: string;
 }
 
-export function MapCanvas({ filters }: MapCanvasProps) {
+interface MapCanvasProps {
+  filters: MapFilters;
+  onAddStop?: (block: BlockClickData) => void;
+  routeMode?: boolean;
+}
+
+export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const filtersRef = useRef(filters);
+  const onAddStopRef = useRef(onAddStop);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => { filtersRef.current = filters; }, [filters]);
+  useEffect(() => { onAddStopRef.current = onAddStop; }, [onAddStop]);
 
-  // Build bbox params from map bounds
   const getBboxParams = useCallback((map: maplibregl.Map) => {
     const bounds = map.getBounds();
     if (!bounds) return null;
@@ -32,7 +46,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
     });
   }, []);
 
-  // Fetch blocks
   const fetchBlocks = useCallback(async (map: maplibregl.Map) => {
     const params = getBboxParams(map);
     if (!params) return;
@@ -46,7 +59,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
     } catch { /* silent */ }
   }, [getBboxParams]);
 
-  // Fetch competitors
   const fetchCompetitors = useCallback(async (map: maplibregl.Map) => {
     const params = getBboxParams(map);
     if (!params) return;
@@ -59,7 +71,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
     } catch { /* silent */ }
   }, [getBboxParams]);
 
-  // Fetch all data
   const fetchAll = useCallback(async (map: maplibregl.Map) => {
     setLoading(true);
     const f = filtersRef.current;
@@ -74,7 +85,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
     fetchTimerRef.current = setTimeout(() => fetchAll(map), 300);
   }, [fetchAll]);
 
-  // Initialize map
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -156,24 +166,73 @@ export function MapCanvas({ filters }: MapCanvasProps) {
       map.on("click", "blocks-fill", (e) => {
         if (!e.features?.length) return;
         const p = e.features[0].properties!;
-        const demand = p.demandScore != null ? Math.round(p.demandScore as number) : "N/A";
-        const opp = p.compositeScore != null ? Math.round(p.compositeScore as number) : "N/A";
-        new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
+        const demand = p.demandScore != null ? Math.round(p.demandScore as number) : null;
+        const opp = p.compositeScore != null ? Math.round(p.compositeScore as number) : null;
+
+        // Build popup DOM so we can attach event handlers
+        const el = document.createElement("div");
+        el.style.fontFamily = "Inter, system-ui, sans-serif";
+
+        const header = document.createElement("div");
+        header.style.cssText = "font-size:13px;font-weight:700;margin-bottom:4px";
+        header.textContent = String(p.ntaName || p.geoid || "");
+        el.appendChild(header);
+
+        if (p.borough) {
+          const sub = document.createElement("div");
+          sub.style.cssText = "font-size:10px;color:#94a3b8;margin-bottom:6px";
+          sub.textContent = String(p.borough);
+          el.appendChild(sub);
+        }
+
+        const scores = document.createElement("div");
+        scores.style.cssText = "display:flex;gap:12px;margin-bottom:6px";
+        scores.innerHTML = `
+          <div><span style="font-size:10px;color:#64748b">Demand</span><br>
+            <strong style="font-size:16px;color:#fbbf24">${demand ?? "N/A"}</strong></div>
+          <div><span style="font-size:10px;color:#64748b">Opportunity</span><br>
+            <strong style="font-size:16px;color:#22c55e">${opp ?? "N/A"}</strong></div>
+        `;
+        el.appendChild(scores);
+
+        const meta = document.createElement("div");
+        meta.style.cssText = "font-size:10px;color:#64748b;margin-bottom:8px";
+        const subwayText = p.nearestSubwayMeters != null ? Math.round(p.nearestSubwayMeters as number) + "m" : "—";
+        meta.textContent = `Jobs: ${p.totalJobs ?? "—"} · Subway: ${subwayText}`;
+        el.appendChild(meta);
+
+        // "Add to Route" button — only shown when onAddStop is available
+        const popup = new maplibregl.Popup({ closeButton: true, maxWidth: "260px" })
           .setLngLat(e.lngLat)
-          .setHTML(
-            `<div style="font-family:Inter,system-ui,sans-serif">
-              <div style="font-size:13px;font-weight:700;margin-bottom:4px">${p.ntaName || p.geoid}</div>
-              ${p.borough ? `<div style="font-size:10px;color:#94a3b8;margin-bottom:6px">${p.borough}</div>` : ""}
-              <div style="display:flex;gap:12px;margin-bottom:6px">
-                <div><span style="font-size:10px;color:#64748b">Demand</span><br><strong style="font-size:16px;color:#fbbf24">${demand}</strong></div>
-                <div><span style="font-size:10px;color:#64748b">Opportunity</span><br><strong style="font-size:16px;color:#22c55e">${opp}</strong></div>
-              </div>
-              <div style="font-size:10px;color:#64748b">
-                Jobs: ${p.totalJobs ?? "—"} · Subway: ${p.nearestSubwayMeters != null ? Math.round(p.nearestSubwayMeters as number) + "m" : "—"}
-              </div>
-            </div>`
-          )
+          .setDOMContent(el)
           .addTo(map);
+
+        const cb = onAddStopRef.current;
+        if (cb) {
+          const btn = document.createElement("button");
+          btn.textContent = "+ Add to Route";
+          btn.style.cssText = `
+            width:100%;padding:6px 0;background:#0f766e;color:white;
+            border:none;border-radius:8px;font-size:11px;font-weight:600;
+            cursor:pointer;transition:background .15s
+          `;
+          btn.onmouseover = () => { btn.style.background = "#0d9488"; };
+          btn.onmouseout = () => { btn.style.background = "#0f766e"; };
+          btn.onclick = () => {
+            cb({
+              geoid: String(p.geoid ?? ""),
+              ntaName: p.ntaName != null ? String(p.ntaName) : null,
+              borough: p.borough != null ? String(p.borough) : null,
+              demandScore: demand,
+              compositeScore: opp,
+              lat: e.lngLat.lat,
+              lng: e.lngLat.lng,
+              timeWindow: filtersRef.current.timeWindow,
+            });
+            popup.remove();
+          };
+          el.appendChild(btn);
+        }
       });
 
       map.on("mouseenter", "blocks-fill", () => { map.getCanvas().style.cursor = "pointer"; });
@@ -189,7 +248,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Refetch when filters change
   const fetchKey = `${filters.timeWindow}|${filters.vertical}|${filters.minDemand}|${[...filters.overlays].sort().join(",")}`;
   useEffect(() => {
     const map = mapRef.current;
@@ -198,7 +256,6 @@ export function MapCanvas({ filters }: MapCanvasProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchKey]);
 
-  // Toggle overlay visibility
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -212,6 +269,11 @@ export function MapCanvas({ filters }: MapCanvasProps) {
     <>
       <div ref={containerRef} className="absolute inset-0" />
       <WeatherWidget />
+      {routeMode && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-teal-900/80 text-xs text-teal-300 px-3 py-1.5 rounded-full border border-teal-700/50 backdrop-blur pointer-events-none">
+          Click a block to add it to your route
+        </div>
+      )}
       {loading && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-zinc-900/90 text-xs text-zinc-400 px-3 py-1.5 rounded-full border border-zinc-800">
           Loading...

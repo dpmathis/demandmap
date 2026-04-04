@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { createClient } from "@/app/lib/supabase/client";
-import { Map, Route, Users, LogOut, ChevronLeft, ChevronRight } from "lucide-react";
+import { Map, Route, Users, LogOut, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { MapSidebar } from "@/app/components/map/MapSidebar";
+import { RoutePanel } from "@/app/components/route/RoutePanel";
 import { DEFAULT_TIME_WINDOW, DEFAULT_WEIGHTS, type TimeWindow, type OpportunityWeights } from "@/app/lib/constants";
+import type { BlockClickData } from "@/app/components/map/MapCanvas";
+import type { RouteStopData } from "@/app/components/route/StopCard";
+import type { SuggestionData } from "@/app/components/route/AISuggestion";
 
 const MapCanvas = dynamic(
   () => import("@/app/components/map/MapCanvas").then((m) => m.MapCanvas),
@@ -44,6 +48,13 @@ export default function MapPage() {
     weights: DEFAULT_WEIGHTS,
   });
 
+  // ── Route builder state ──
+  const [routeOpen, setRouteOpen] = useState(false);
+  const [routeId, setRouteId] = useState<string | null>(null);
+  const [routeName, setRouteName] = useState("");
+  const [stops, setStops] = useState<RouteStopData[]>([]);
+  const creatingRouteRef = useRef(false);
+
   const updateFilters = useCallback((partial: Partial<MapFilters>) => {
     setFilters((prev) => ({ ...prev, ...partial }));
   }, []);
@@ -52,6 +63,102 @@ export default function MapPage() {
     await supabase.auth.signOut();
     router.push("/login");
   }
+
+  // Open the route panel (create route on first stop)
+  function openRoute() {
+    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    setRouteName(`Route – ${today}`);
+    setStops([]);
+    setRouteId(null);
+    setRouteOpen(true);
+  }
+
+  // Add a stop — creates the route if needed, then adds the stop
+  const handleAddStop = useCallback(async (block: BlockClickData) => {
+    if (creatingRouteRef.current) return;
+
+    let rid = routeId;
+
+    // Auto-create route on first stop
+    if (!rid) {
+      creatingRouteRef.current = true;
+      try {
+        const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const name = `Route – ${today}`;
+        const res = await fetch("/api/routes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, vertical: filters.vertical }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.error("Failed to create route:", err);
+          return;
+        }
+        const data = await res.json();
+        rid = data.route.id;
+        setRouteId(rid);
+        setRouteName(name);
+      } finally {
+        creatingRouteRef.current = false;
+      }
+    }
+
+    // Add stop
+    const res = await fetch(`/api/routes/${rid}/stops`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        censusBlockGeoid: block.geoid,
+        timeWindow: block.timeWindow,
+        lat: block.lat,
+        lng: block.lng,
+      }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    const stop: RouteStopData = {
+      ...data.stop,
+      censusBlock: data.stop.censusBlock ?? { ntaName: block.ntaName, borough: block.borough },
+      demandScore: block.demandScore,
+    };
+    setStops((prev) => [...prev, stop]);
+    if (!routeOpen) setRouteOpen(true);
+  }, [routeId, filters.vertical, routeOpen]);
+
+  const handleStopDelete = useCallback(async (stopId: string) => {
+    if (!routeId) return;
+    await fetch(`/api/routes/${routeId}/stops/${stopId}`, { method: "DELETE" });
+    setStops((prev) => prev.filter((s) => s.id !== stopId));
+  }, [routeId]);
+
+  const handleSuggestionAccept = useCallback(async (suggestion: SuggestionData) => {
+    await handleAddStop({
+      geoid: suggestion.geoid,
+      ntaName: suggestion.ntaName,
+      borough: suggestion.borough,
+      demandScore: suggestion.demandScore,
+      compositeScore: null,
+      lat: 0,
+      lng: 0,
+      timeWindow: suggestion.timeWindow,
+    });
+  }, [handleAddStop]);
+
+  const handleRename = useCallback(async (name: string) => {
+    setRouteName(name);
+    if (routeId) {
+      await fetch(`/api/routes/${routeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+    }
+  }, [routeId]);
+
+  const handleCloseRoute = useCallback(() => {
+    setRouteOpen(false);
+  }, []);
 
   return (
     <div className="h-dvh bg-zinc-950 text-white flex flex-col">
@@ -63,7 +170,10 @@ export default function MapPage() {
             <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-400">
               <Map size={13} /> Explorer
             </button>
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => router.push("/routes")}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            >
               <Route size={13} /> Routes
             </button>
             <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
@@ -71,17 +181,31 @@ export default function MapPage() {
             </button>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
-        >
-          <LogOut size={13} />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Build Route FAB */}
+          <button
+            onClick={routeOpen ? handleCloseRoute : openRoute}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              routeOpen
+                ? "bg-teal-600 text-white"
+                : "bg-teal-500/15 text-teal-400 hover:bg-teal-500/25"
+            }`}
+          >
+            <Plus size={13} />
+            {routeOpen ? "Building Route" : "Build Route"}
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          >
+            <LogOut size={13} />
+          </button>
+        </div>
       </nav>
 
       {/* Main content */}
       <div className="flex-1 flex min-h-0 relative">
-        {/* Sidebar */}
+        {/* Left Sidebar */}
         {sidebarOpen && (
           <MapSidebar filters={filters} onFiltersChange={updateFilters} />
         )}
@@ -97,8 +221,27 @@ export default function MapPage() {
 
         {/* Map */}
         <div className="flex-1 relative">
-          <MapCanvas filters={filters} />
+          <MapCanvas
+            filters={filters}
+            onAddStop={routeOpen ? handleAddStop : undefined}
+            routeMode={routeOpen}
+          />
         </div>
+
+        {/* Right: Route Panel */}
+        {routeOpen && (
+          <RoutePanel
+            routeId={routeId}
+            routeName={routeName}
+            stops={stops}
+            vertical={filters.vertical}
+            timeWindow={filters.timeWindow}
+            onClose={handleCloseRoute}
+            onStopDelete={handleStopDelete}
+            onSuggestionAccept={handleSuggestionAccept}
+            onRename={handleRename}
+          />
+        )}
       </div>
     </div>
   );
