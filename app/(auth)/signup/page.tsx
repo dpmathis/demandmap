@@ -50,7 +50,7 @@ export default function SignupPage() {
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-zinc-400 mb-1.5">Email</label>
               <input
-                id="email" type="email" value={email}
+                id="email" type="email" autoComplete="email" value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com" required
                 className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
@@ -59,7 +59,7 @@ export default function SignupPage() {
             <div>
               <label htmlFor="password" className="block text-xs font-medium text-zinc-400 mb-1.5">Password</label>
               <input
-                id="password" type="password" value={password}
+                id="password" type="password" autoComplete="new-password" value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="6+ characters" required minLength={6}
                 className="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-sm text-white placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
