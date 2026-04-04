@@ -18,10 +18,11 @@ export default function TestMapPage() {
     import("maplibre-gl/dist/maplibre-gl.css").catch(() => {});
     import("maplibre-gl").then((mod) => {
       const maplibregl = mod.default ?? mod;
-      setStatus((prev) => prev + ` → 3. maplibre-gl loaded (v${maplibregl.version ?? "?"})`);
+      setStatus((prev) => prev + " → 3. maplibre-gl loaded");
 
       try {
-        const map = new maplibregl.Map({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const map = new (maplibregl as any).Map({
           container: el,
           style: "https://demotiles.maplibre.org/style.json",
           center: [-74.006, 40.7128],
