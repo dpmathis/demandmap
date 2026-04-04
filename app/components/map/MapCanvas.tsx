@@ -90,7 +90,7 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://tiles.openfreemap.org/styles/dark",
+      style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
       center: NYC_CENTER,
       zoom: NYC_DEFAULT_ZOOM,
       minZoom: 9,
