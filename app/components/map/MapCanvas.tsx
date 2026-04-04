@@ -31,6 +31,7 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
   const onAddStopRef = useRef(onAddStop);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => { filtersRef.current = filters; }, [filters]);
   useEffect(() => { onAddStopRef.current = onAddStop; }, [onAddStop]);
@@ -88,30 +89,40 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: {
-        version: 8,
-        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
-        sources: {
-          "carto-dark": {
-            type: "raster",
-            tiles: [
-              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-            ],
-            tileSize: 256,
-            attribution: "©OpenStreetMap ©CARTO",
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        style: {
+          version: 8,
+          sources: {
+            "carto-dark": {
+              type: "raster",
+              tiles: [
+                "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+                "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+                "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+              ],
+              tileSize: 256,
+              attribution: "©OpenStreetMap ©CARTO",
+            },
           },
-        },
-        layers: [{ id: "carto-dark", type: "raster", source: "carto-dark" }],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
-      center: NYC_CENTER,
-      zoom: NYC_DEFAULT_ZOOM,
-      minZoom: 9,
-      maxZoom: 18,
+          layers: [{ id: "carto-dark", type: "raster", source: "carto-dark" }],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        center: NYC_CENTER,
+        zoom: NYC_DEFAULT_ZOOM,
+        minZoom: 9,
+        maxZoom: 18,
+      });
+    } catch (err) {
+      setMapError(err instanceof Error ? err.message : "Map failed to initialize");
+      return;
+    }
+
+    map.on("error", (e) => {
+      console.error("MapLibre error:", e.error?.message ?? e);
+      setMapError(e.error?.message ?? "Map error");
     });
 
     map.addControl(new maplibregl.NavigationControl({}), "top-right");
@@ -285,6 +296,14 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
   return (
     <>
       <div ref={containerRef} className="absolute inset-0" />
+      {mapError && (
+        <div className="absolute inset-0 flex items-center justify-center z-20 bg-zinc-950/80">
+          <div className="bg-zinc-900 border border-red-800 rounded-xl p-4 max-w-xs text-center">
+            <p className="text-xs font-bold text-red-400 mb-1">Map Error</p>
+            <p className="text-[11px] text-zinc-400">{mapError}</p>
+          </div>
+        </div>
+      )}
       <WeatherWidget />
       {routeMode && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-teal-900/80 text-xs text-teal-300 px-3 py-1.5 rounded-full border border-teal-700/50 backdrop-blur pointer-events-none">
