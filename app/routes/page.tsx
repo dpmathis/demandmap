@@ -39,6 +39,16 @@ export default function RoutesPage() {
     setRoutes((prev) => prev.filter((r) => r.id !== id));
   }
 
+  async function toggleStatus(id: string, current: string) {
+    const next = current === "active" ? "draft" : "active";
+    await fetch(`/api/routes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: next }),
+    });
+    setRoutes((prev) => prev.map((r) => r.id === id ? { ...r, status: next } : r));
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
     router.push("/login");
@@ -63,7 +73,9 @@ export default function RoutesPage() {
             <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-400">
               <Route size={13} /> Routes
             </button>
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => router.push("/team")}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
               <Users size={13} /> Team
             </button>
           </div>
@@ -128,13 +140,16 @@ export default function RoutesPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-base">{verticalEmoji[route.vertical] ?? "📍"}</span>
                         <h2 className="font-semibold text-sm truncate">{route.name}</h2>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-medium ${
-                          route.status === "active"
-                            ? "bg-green-500/15 text-green-400"
-                            : "bg-zinc-800 text-zinc-500"
-                        }`}>
+                        <button
+                          onClick={() => toggleStatus(route.id, route.status)}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-medium cursor-pointer transition-colors ${
+                            route.status === "active"
+                              ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                              : "bg-zinc-800 text-zinc-500 hover:bg-zinc-700"
+                          }`}
+                        >
                           {route.status}
-                        </span>
+                        </button>
                       </div>
                       <p className="text-[10px] text-zinc-500">
                         {route.stops.length} stop{route.stops.length !== 1 ? "s" : ""}
