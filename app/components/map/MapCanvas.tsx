@@ -93,23 +93,7 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: {
-          version: 8,
-          sources: {
-            "carto-dark": {
-              type: "raster",
-              tiles: [
-                "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-                "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-                "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: "©OpenStreetMap ©CARTO",
-            },
-          },
-          layers: [{ id: "carto-dark", type: "raster", source: "carto-dark" }],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
+        style: "https://demotiles.maplibre.org/style.json",
         center: NYC_CENTER,
         zoom: NYC_DEFAULT_ZOOM,
         minZoom: 9,
