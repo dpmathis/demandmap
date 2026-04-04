@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Shared Reference Data (read-only, pre-loaded) ─────────────────────────
+
+model CensusBlock {
+  geoid       String @id
+  stateFips   String @map("state_fips")
+  countyFips  String @map("county_fips")
+  tract       String
+  block       String
+  borough     String?
+  ntaCode     String? @map("nta_code")
+  ntaName     String? @map("nta_name")
+  landAreaSqm Float? @map("land_area_sqm")
+
+  totalJobs         Int? @map("total_jobs")
+  cns07Retail       Int? @map("cns07_retail")
+  cns09Information  Int? @map("cns09_information")
+  cns10Finance      Int? @map("cns10_finance")
+  cns11RealEstate   Int? @map("cns11_real_estate")
+  cns12Professional Int? @map("cns12_professional")
+  cns13Management   Int? @map("cns13_management")
+  cns14Admin        Int? @map("cns14_administrative")
+
+  primaryLandUse      String? @map("primary_land_use")
+  totalOfficeSqft     Float?  @map("total_office_sqft")
+  totalCommercialSqft Float?  @map("total_commercial_sqft")
+  totalResUnits       Int?    @map("total_residential_units")
+
+  nearestSubwayMeters Float?  @map("nearest_subway_meters")
+  subwayLines         String? @map("subway_lines")
+
+  updatedAt DateTime @default(now()) @map("updated_at")
+
+  hourlyDemand     BlockHourlyDemand[]
+  opportunityScore OpportunityScore?
+  routeStops       RouteStop[]
+
+  @@map("census_blocks")
+}
+
+model NtaBoundary {
+  ntaCode  String @id @map("nta_code")
+  ntaName  String @map("nta_name")
+  borough  String
+
+  totalJobs         Int?   @map("total_jobs")
+  totalBlocks       Int?   @map("total_blocks")
+  avgCompositeScore Float? @map("avg_composite_score")
+
+  @@map("nta_boundaries")
+}
+
+model BlockHourlyDemand {
+  censusBlockGeoid String @map("census_block_geoid")
+  timeWindow       String @map("time_window")
+  demandScore      Float  @map("demand_score")
+  demandComponents Json?  @map("demand_components")
+
+  censusBlock CensusBlock @relation(fields: [censusBlockGeoid], references: [geoid])
+
+  @@id([censusBlockGeoid, timeWindow])
+  @@index([timeWindow])
+  @@map("block_hourly_demand")
+}
+
+model OpportunityScore {
+  censusBlockGeoid      String @id @map("census_block_geoid")
+  supplyScore           Float? @map("supply_score")
+  demandScore           Float? @map("demand_score")
+  gapScore              Float? @map("gap_score")
+  compositeScore        Float? @map("composite_score")
+  specialtyCount500m    Int?   @map("specialty_count_500m")
+  premiumCount500m      Int?   @map("premium_count_500m")
+  mainstreamCount500m   Int?   @map("mainstream_count_500m")
+  nearestSpecialtyM     Float? @map("nearest_specialty_meters")
+  computedAt            DateTime @default(now()) @map("computed_at")
+
+  censusBlock CensusBlock @relation(fields: [censusBlockGeoid], references: [geoid])
+
+  @@map("opportunity_scores")
+}
+
+model SubwayStation {
+  id               String  @id @default(uuid())
+  name             String
+  lines            String?
+  lat              Float
+  lng              Float
+  stationComplexId String? @map("station_complex_id")
+
+  @@index([stationComplexId])
+  @@map("subway_stations")
+}
+
+model StationRidershipBaseline {
+  stationComplexId String @map("station_complex_id")
+  dayOfWeek        Int    @map("day_of_week")
+  hour             Int
+  avgRidership     Float  @map("avg_ridership")
+  medianRidership  Float? @map("median_ridership")
+  sampleWeeks      Int    @default(0) @map("sample_weeks")
+
+  @@id([stationComplexId, dayOfWeek, hour])
+  @@index([dayOfWeek, hour])
+  @@map("station_ridership_baselines")
+}
+
+model CompetitorLocation {
+  id               String   @id @default(uuid())
+  tenantId         String?  @map("tenant_id")
+  name             String
+  address          String?
+  lat              Float?
+  lng              Float?
+  censusBlockGeoid String?  @map("census_block_geoid")
+  category         String?
+  qualityTier      String?  @map("quality_tier")
+  qualityScore     Float?   @map("quality_score")
+  externalId       String?  @unique @map("external_id")
+  source           String?
+  sourceGrade      String?  @map("source_grade")
+  isChain          Boolean  @default(false) @map("is_chain")
+  brandName        String?  @map("brand_name")
+  metadata         Json?
+  lastVerifiedAt   DateTime? @map("last_verified_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@index([qualityTier])
+  @@map("competitor_locations")
+}
+
+// ─── Tenant Data ────────────────────────────────────────────────────────────
+
+model Tenant {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  defaultVertical String   @default("food_truck") @map("default_vertical")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  users  TenantUser[]
+  routes Route[]
+
+  @@map("tenants")
+}
+
+model TenantUser {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  authId    String   @map("auth_id")
+  email     String
+  name      String?
+  role      String   @default("admin")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, authId])
+  @@index([authId])
+  @@map("tenant_users")
+}
+
+model Route {
+  id         String    @id @default(uuid())
+  tenantId   String    @map("tenant_id")
+  name       String
+  date       DateTime? @db.Date
+  vertical   String    @default("food_truck")
+  assignedTo String?   @map("assigned_to")
+  status     String    @default("draft")
+  isTemplate Boolean   @default(false) @map("is_template")
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id])
+  stops  RouteStop[]
+
+  @@index([tenantId])
+  @@map("routes")
+}
+
+model RouteStop {
+  id               String @id @default(uuid())
+  routeId          String @map("route_id")
+  censusBlockGeoid String @map("census_block_geoid")
+  timeWindow       String @map("time_window")
+  sortOrder        Int    @map("sort_order")
+  notes            String?
+  lat              Float?
+  lng              Float?
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  route       Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  censusBlock CensusBlock @relation(fields: [censusBlockGeoid], references: [geoid])
+
+  @@index([routeId])
+  @@map("route_stops")
+}
