@@ -2,7 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from "react";
 import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
 import { NYC_CENTER, NYC_DEFAULT_ZOOM } from "@/app/lib/constants";
 import type { MapFilters } from "@/app/map/page";
 import { WeatherWidget } from "./WeatherWidget";
@@ -93,7 +92,23 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
     try {
       map = new maplibregl.Map({
         container: containerRef.current,
-        style: "https://demotiles.maplibre.org/style.json",
+        style: {
+          version: 8,
+          sources: {
+            "carto-dark": {
+              type: "raster",
+              tiles: [
+                "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+                "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+                "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              ],
+              tileSize: 256,
+              attribution: "&copy; OpenStreetMap &copy; CARTO",
+            },
+          },
+          layers: [{ id: "carto-dark", type: "raster", source: "carto-dark" }],
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
         center: NYC_CENTER,
         zoom: NYC_DEFAULT_ZOOM,
         minZoom: 9,
