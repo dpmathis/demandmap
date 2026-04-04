@@ -90,7 +90,24 @@ export function MapCanvas({ filters, onAddStop, routeMode }: MapCanvasProps) {
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+      style: {
+        version: 8,
+        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+        sources: {
+          "carto-dark": {
+            type: "raster",
+            tiles: [
+              "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+              "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+            ],
+            tileSize: 256,
+            attribution: "©OpenStreetMap ©CARTO",
+          },
+        },
+        layers: [{ id: "carto-dark", type: "raster", source: "carto-dark" }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
       center: NYC_CENTER,
       zoom: NYC_DEFAULT_ZOOM,
       minZoom: 9,
