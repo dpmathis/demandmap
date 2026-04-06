@@ -67,7 +67,7 @@ function CompareRoutesContent() {
 
   useEffect(() => {
     if (!ids) { setLoading(false); return; }
-    fetch(`/api/routes/compare?ids=${ids}`)
+    fetch(`/api/routes/compare?${new URLSearchParams({ ids })}`)
       .then((r) => r.json())
       .then((d) => { setRoutes(d.routes ?? []); setLoading(false); })
       .catch(() => setLoading(false));

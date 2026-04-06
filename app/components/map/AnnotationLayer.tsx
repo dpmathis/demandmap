@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { X, Plus, MapPin, Construction, ParkingSquare, CalendarDays, AlertTriangle, StickyNote, Trash2 } from "lucide-react";
 
 interface Annotation {
@@ -31,6 +31,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   hazard: "#ef4444",
 };
 
+function sanitizeColor(color: string): string {
+  return /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : "#14b8a6";
+}
+
 interface AnnotationLayerProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   map: any;
@@ -44,7 +48,7 @@ export function AnnotationLayer({ map, active, onClose }: AnnotationLayerProps) 
   const [formData, setFormData] = useState({ label: "", category: "note", notes: "" });
   const [pendingLngLat, setPendingLngLat] = useState<{ lng: number; lat: number } | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [markers, setMarkers] = useState<any[]>([]);
+  const markersRef = useRef<any[]>([]);
 
   // Load annotations
   useEffect(() => {
@@ -57,25 +61,34 @@ export function AnnotationLayer({ map, active, onClose }: AnnotationLayerProps) 
   // Render markers on map using maplibregl
   useEffect(() => {
     if (!map) return;
+    let cancelled = false;
 
     // Clear old markers
-    markers.forEach((m) => m.remove());
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
 
     // Dynamically import maplibre-gl for Marker
     import("maplibre-gl").then((ml) => {
+      if (cancelled) return;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newMarkers: any[] = [];
 
       for (const ann of annotations) {
         const el = document.createElement("div");
         el.className = "annotation-marker";
-        el.style.cssText = `
-          width: 24px; height: 24px; border-radius: 50%;
-          background: ${ann.color}; border: 2px solid white;
-          cursor: pointer; display: flex; align-items: center;
-          justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-          font-size: 10px; color: white; font-weight: bold;
-        `;
+        el.style.width = "24px";
+        el.style.height = "24px";
+        el.style.borderRadius = "50%";
+        el.style.background = sanitizeColor(ann.color);
+        el.style.border = "2px solid white";
+        el.style.cursor = "pointer";
+        el.style.display = "flex";
+        el.style.alignItems = "center";
+        el.style.justifyContent = "center";
+        el.style.boxShadow = "0 2px 8px rgba(0,0,0,0.4)";
+        el.style.fontSize = "10px";
+        el.style.color = "white";
+        el.style.fontWeight = "bold";
         el.textContent = ann.label.charAt(0).toUpperCase();
         el.title = `${ann.label}${ann.notes ? `\n${ann.notes}` : ""}${ann.userName ? `\n— ${ann.userName}` : ""}`;
 
@@ -86,13 +99,14 @@ export function AnnotationLayer({ map, active, onClose }: AnnotationLayerProps) 
         newMarkers.push(marker);
       }
 
-      setMarkers(newMarkers);
+      markersRef.current = newMarkers;
     });
 
     return () => {
-      markers.forEach((m) => m.remove());
+      cancelled = true;
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, annotations]);
 
   // Click handler for placing annotations
@@ -233,7 +247,7 @@ export function AnnotationLayer({ map, active, onClose }: AnnotationLayerProps) 
             <div key={ann.id} className="flex items-start gap-2 px-3 py-2 border-b border-zinc-800/50 hover:bg-white/5">
               <div
                 className="w-3 h-3 rounded-full mt-0.5 shrink-0"
-                style={{ background: ann.color }}
+                style={{ background: sanitizeColor(ann.color) }}
               />
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-medium truncate">{ann.label}</p>

@@ -52,8 +52,8 @@ export default function DashboardPage() {
       .catch(() => setLoading(false));
 
     fetch("/api/activity?limit=10")
-      .then((r) => r.json())
-      .then((d) => setActivity(d.logs ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { if (d) setActivity(d.logs ?? []); })
       .catch(() => {});
   }, []);
 

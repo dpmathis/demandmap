@@ -22,11 +22,13 @@ export function BottomSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({ startY: 0, startHeight: 0, dragging: false });
   const [heightPct, setHeightPct] = useState(snapPoints[initialSnap]);
+  const heightRef = useRef(snapPoints[initialSnap]);
   const [transitioning, setTransitioning] = useState(false);
 
   // Reset on open
   useEffect(() => {
     if (open) {
+      heightRef.current = snapPoints[initialSnap];
       setHeightPct(snapPoints[initialSnap]);
     }
   }, [open, snapPoints, initialSnap]);
@@ -57,6 +59,7 @@ export function BottomSheet({
       }
 
       setTransitioning(true);
+      heightRef.current = nearest;
       setHeightPct(nearest);
       setTimeout(() => setTransitioning(false), 300);
     },
@@ -67,10 +70,10 @@ export function BottomSheet({
     const touch = e.touches[0];
     dragRef.current = {
       startY: touch.clientY,
-      startHeight: heightPct,
+      startHeight: heightRef.current,
       dragging: true,
     };
-  }, [heightPct]);
+  }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!dragRef.current.dragging) return;
@@ -78,6 +81,7 @@ export function BottomSheet({
     const deltaY = dragRef.current.startY - touch.clientY;
     const deltaPct = (deltaY / window.innerHeight) * 100;
     const newPct = Math.max(10, Math.min(95, dragRef.current.startHeight + deltaPct));
+    heightRef.current = newPct;
     setHeightPct(newPct);
   }, []);
 
@@ -88,8 +92,8 @@ export function BottomSheet({
     const deltaY = dragRef.current.startY - touch.clientY;
     const velocity = Math.abs(deltaY) / 200; // rough velocity
     const direction = deltaY < 0 ? -1 : 1;
-    snapToNearest(heightPct, direction < 0 ? velocity : 0);
-  }, [heightPct, snapToNearest]);
+    snapToNearest(heightRef.current, direction < 0 ? velocity : 0);
+  }, [snapToNearest]);
 
   if (!open) return null;
 

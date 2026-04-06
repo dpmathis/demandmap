@@ -30,15 +30,20 @@ const EXPORT_TYPES = [
 
 export default function ExportPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [days, setDays] = useState(30);
 
   async function handleExport(type: string, format: "csv" | "json") {
     setDownloading(`${type}-${format}`);
+    setExportError(null);
     try {
       const params = new URLSearchParams({ type, format });
       if (type === "analytics") params.set("days", String(days));
       const res = await fetch(`/api/export?${params}`);
-      if (!res.ok) return;
+      if (!res.ok) {
+        setExportError(`Export failed (${res.status}). Please try again.`);
+        return;
+      }
 
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition") ?? "";
@@ -64,6 +69,12 @@ export default function ExportPage() {
         </h1>
         <p className="text-sm text-zinc-500 mt-0.5">Download your data as CSV or JSON</p>
       </div>
+
+      {exportError && (
+        <div className="mb-4 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+          {exportError}
+        </div>
+      )}
 
       <div className="space-y-4">
         {EXPORT_TYPES.map((exp) => {

@@ -63,23 +63,35 @@ export function NotificationBell() {
   }, [open]);
 
   async function markAllRead() {
-    await fetch("/api/notifications", {
+    const prev = notifications;
+    const prevCount = unreadCount;
+    setNotifications((n) => n.map((item) => ({ ...item, read: true })));
+    setUnreadCount(0);
+    const res = await fetch("/api/notifications", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ markAllRead: true }),
-    });
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
+    }).catch(() => null);
+    if (!res?.ok) {
+      setNotifications(prev);
+      setUnreadCount(prevCount);
+    }
   }
 
   async function markRead(id: string) {
-    await fetch("/api/notifications", {
+    const prev = notifications;
+    const prevCount = unreadCount;
+    setNotifications((n) => n.map((item) => (item.id === id ? { ...item, read: true } : item)));
+    setUnreadCount((c) => Math.max(0, c - 1));
+    const res = await fetch("/api/notifications", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: [id] }),
-    });
-    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    }).catch(() => null);
+    if (!res?.ok) {
+      setNotifications(prev);
+      setUnreadCount(prevCount);
+    }
   }
 
   return (

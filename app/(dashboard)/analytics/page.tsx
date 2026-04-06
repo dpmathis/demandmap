@@ -173,9 +173,9 @@ export default function AnalyticsPage() {
                         <div
                           className="w-full bg-purple-500/60 rounded-t-sm"
                           style={{ height: `${(d.avgRevenue / maxAvg) * 100}%`, minHeight: 2 }}
-                          title={`${DOW_LABELS[d.dow]}: avg $${d.avgRevenue.toFixed(0)}`}
+                          title={`${DOW_LABELS[d.dow] ?? d.dow}: avg $${d.avgRevenue.toFixed(0)}`}
                         />
-                        <span className="text-[9px] text-zinc-500 font-mono">{DOW_LABELS[d.dow]}</span>
+                        <span className="text-[9px] text-zinc-500 font-mono">{DOW_LABELS[d.dow] ?? d.dow}</span>
                       </div>
                     ));
                   })()}
