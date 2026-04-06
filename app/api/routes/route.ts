@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { getTenantUser } from "@/app/lib/db/tenant";
 import { prisma } from "@/app/lib/db/prisma";
+import { logActivity } from "@/app/lib/activity";
 
 export async function GET() {
   const supabase = await createClient();
@@ -44,5 +45,6 @@ export async function POST(request: Request) {
     include: { stops: true },
   });
 
+  logActivity({ tenantId: tu.tenantId, userId: user.id, userName: tu.name, action: "created", entity: "route", entityId: route.id, entityName: route.name });
   return NextResponse.json({ route }, { status: 201 });
 }

@@ -40,3 +40,13 @@ export const DEFAULT_WEIGHTS: OpportunityWeights = {
   demand: 50,
   transit: 10,
 };
+
+export const COLOR_MODES = ["demand", "gap", "competitors", "transit"] as const;
+export type ColorMode = (typeof COLOR_MODES)[number];
+
+export const COLOR_MODE_LABELS: Record<ColorMode, string> = {
+  demand: "Demand Score",
+  gap: "Opportunity Gap",
+  competitors: "Competitor Density",
+  transit: "Transit Access",
+};

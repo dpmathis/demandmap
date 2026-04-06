@@ -3,6 +3,7 @@
 
 @theme inline {
   --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
 }
 
 /* MapLibre dark theme overrides */
@@ -27,4 +28,39 @@
 }
 .maplibregl-ctrl-group button {
   filter: invert(1);
+}
+
+/* Auth split-screen animations */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.auth-glow-pulse { animation: glow-pulse 4s ease-in-out infinite; }
+.auth-float { animation: float 6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-glow-pulse,
+  .auth-float {
+    animation: none;
+  }
+}
+
+/* Planner dotted-grid texture for empty cells */
+.terminal-grid {
+  background-size: 16px 16px;
+  background-image: radial-gradient(circle, #27272a 1px, transparent 1px);
+}
+
+@keyframes pulse-op {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.pulse-op { animation: pulse-op 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-op { animation: none; }
 }

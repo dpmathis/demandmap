@@ -40,17 +40,22 @@ export interface DemandProfileConfig {
   tiers: Array<{ name: string; score: number; color: string }>;
 }
 
-/** Default coffee/beverage profile (matches original hardcoded values) */
+/**
+ * Coffee/beverage profile — calibrated against MTA ridership data (Nov 2024).
+ * Key insight: AM coffee demand is driven by residential outflow (commuters),
+ * not office workers who are still in transit. Office demand kicks in mid-morning.
+ * Transit bonus reflects empirical ridership peaks at commute hours.
+ */
 export const COFFEE_PROFILE: DemandProfileConfig = {
   name: "Coffee / Beverage",
   vertical: "food_truck",
-  componentWeights: { office: 70, transit: 15, retail: 10, residential: 5 },
+  componentWeights: { office: 40, transit: 20, retail: 15, residential: 25 },
   transitProximityM: 200,
   transitBonus: {
-    "07-09": 1.5, "09-11": 1.0, "11-13": 1.0, "13-15": 1.0,
-    "15-17": 1.1, "17-19": 1.4, "19-21": 1.1,
+    "07-09": 1.48, "09-11": 1.30, "11-13": 1.24, "13-15": 1.32,
+    "15-17": 1.47, "17-19": 1.50, "19-21": 1.24,
   },
-  residentialMultiplier: 0.3,
+  residentialMultiplier: 0.5,
   opportunityWeights: { supply: 40, demand: 50, transit: 10 },
   competitorRadiusM: 500,
   tiers: [
@@ -60,14 +65,18 @@ export const COFFEE_PROFILE: DemandProfileConfig = {
   ],
 };
 
+/**
+ * Food truck profile — lunch-weighted transit bonus.
+ * Food trucks peak at lunch (11-14) near offices and transit hubs.
+ */
 export const FOOD_TRUCK_PROFILE: DemandProfileConfig = {
   name: "Food Truck",
   vertical: "food_truck",
-  componentWeights: { office: 40, transit: 15, retail: 30, residential: 15 },
+  componentWeights: { office: 35, transit: 20, retail: 25, residential: 20 },
   transitProximityM: 300,
   transitBonus: {
-    "07-09": 1.2, "09-11": 1.0, "11-13": 1.3, "13-15": 1.2,
-    "15-17": 1.0, "17-19": 1.3, "19-21": 1.2,
+    "07-09": 1.20, "09-11": 1.25, "11-13": 1.40, "13-15": 1.35,
+    "15-17": 1.30, "17-19": 1.40, "19-21": 1.24,
   },
   residentialMultiplier: 0.5,
   opportunityWeights: { supply: 35, demand: 40, transit: 25 },
@@ -79,6 +88,10 @@ export const FOOD_TRUCK_PROFILE: DemandProfileConfig = {
   ],
 };
 
+/**
+ * Political canvass profile — evening-weighted for when residents are home.
+ * Transit bonus calibrated from MTA PM peak when commuters return.
+ */
 export const POLITICAL_PROFILE: DemandProfileConfig = {
   name: "Political Canvass",
   vertical: "political",
@@ -86,7 +99,7 @@ export const POLITICAL_PROFILE: DemandProfileConfig = {
   transitProximityM: 500,
   transitBonus: {
     "07-09": 1.0, "09-11": 1.0, "11-13": 1.0, "13-15": 1.0,
-    "15-17": 1.2, "17-19": 1.5, "19-21": 1.3,
+    "15-17": 1.30, "17-19": 1.50, "19-21": 1.24,
   },
   residentialMultiplier: 0.8,
   opportunityWeights: { supply: 20, demand: 60, transit: 20 },
@@ -98,16 +111,20 @@ export const POLITICAL_PROFILE: DemandProfileConfig = {
   ],
 };
 
+/**
+ * Retail pop-up profile — afternoon/evening weighted.
+ * MTA data shows mixed-use and commercial areas peak 15:00-19:00.
+ */
 export const RETAIL_POPUP_PROFILE: DemandProfileConfig = {
   name: "Retail Pop-Up",
   vertical: "retail_popup",
-  componentWeights: { office: 30, transit: 20, retail: 35, residential: 15 },
+  componentWeights: { office: 25, transit: 20, retail: 35, residential: 20 },
   transitProximityM: 250,
   transitBonus: {
-    "07-09": 1.0, "09-11": 1.2, "11-13": 1.3, "13-15": 1.2,
-    "15-17": 1.3, "17-19": 1.4, "19-21": 1.2,
+    "07-09": 1.10, "09-11": 1.25, "11-13": 1.30, "13-15": 1.32,
+    "15-17": 1.47, "17-19": 1.50, "19-21": 1.24,
   },
-  residentialMultiplier: 0.4,
+  residentialMultiplier: 0.5,
   opportunityWeights: { supply: 35, demand: 45, transit: 20 },
   competitorRadiusM: 600,
   tiers: [

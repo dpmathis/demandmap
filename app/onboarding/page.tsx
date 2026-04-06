@@ -64,7 +64,7 @@ export default function OnboardingPage() {
             <div>
               <h2 className="text-xl font-bold text-white">You&apos;re invited!</h2>
               <p className="text-sm text-zinc-400 mt-1">
-                You&apos;ve been added to <strong className="text-white">{invitedToOrg ?? "a team"}</strong> on DemandMap.
+                You&apos;ve been added to <strong className="text-white">{invitedToOrg ?? "a team"}</strong> on NYC DemandMap.
               </p>
             </div>
             <div>
@@ -108,7 +108,7 @@ export default function OnboardingPage() {
           {step === 0 && (
             <div className="space-y-5">
               <div>
-                <h2 className="text-xl font-bold text-white">Welcome to DemandMap</h2>
+                <h2 className="text-xl font-bold text-white">Welcome to NYC DemandMap</h2>
                 <p className="text-sm text-zinc-400 mt-1">What should we call you?</p>
               </div>
               <input
@@ -175,7 +175,7 @@ export default function OnboardingPage() {
                 disabled={!orgName || loading}
                 className="w-full py-2.5 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
               >
-                {loading ? "Setting up..." : "Launch DemandMap"}
+                {loading ? "Setting up..." : "Launch NYC DemandMap"}
               </button>
             </div>
           )}

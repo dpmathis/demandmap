@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/notifications/check",
+      "schedule": "*/30 7-21 * * *"
+    },
+    {
+      "path": "/api/notifications/route-alerts",
+      "schedule": "0 12 * * *"
+    }
+  ]
+}

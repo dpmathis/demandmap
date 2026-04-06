@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 export interface BBox {
@@ -7,10 +8,56 @@ export interface BBox {
   north: number;
 }
 
+export interface BlockFilters {
+  boroughs?: string[];
+  maxCompetitors?: number;
+}
+
+export interface CompetitorFilters {
+  tiers?: string[];
+  chainFilter?: "all" | "chain" | "independent";
+  categories?: string[];
+}
+
+// Map vendor vertical → competitor categories that compete for the same customers.
+// Only "Coffee/Tea" is currently seeded; other verticals resolve to [] (0 competitors shown honestly).
+export const VERTICAL_COMPETITOR_CATEGORIES: Record<string, string[]> = {
+  coffee: ["Coffee/Tea"],
+  food_truck: ["Food Truck", "Quick Service Restaurant", "Street Food"],
+  retail: ["Retail", "Pop-Up"],
+  political: [], // no head-to-head competitor type
+  events: ["Event Venue", "Catering"],
+  custom: [], // user-defined
+};
+
 /**
  * Fetch census blocks with demand data in a bounding box as GeoJSON.
+ * When vertical is provided and isn't "coffee", demand scores are computed
+ * on-the-fly from raw census block features using the matching profile.
  */
-export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
+export async function getBlocksInBBox(
+  bbox: BBox,
+  timeWindow: string,
+  filters?: BlockFilters,
+  vertical?: string,
+) {
+  const conditions: Prisma.Sql[] = [];
+
+  if (filters?.boroughs && filters.boroughs.length > 0) {
+    conditions.push(Prisma.sql`AND cb.borough = ANY(${filters.boroughs})`);
+  }
+  if (filters?.maxCompetitors != null && filters.maxCompetitors < 100) {
+    conditions.push(
+      Prisma.sql`AND COALESCE(os.specialty_count_500m,0) + COALESCE(os.premium_count_500m,0) + COALESCE(os.mainstream_count_500m,0) <= ${filters.maxCompetitors}`
+    );
+  }
+
+  const extraWhere = conditions.length > 0
+    ? Prisma.join(conditions, " ")
+    : Prisma.empty;
+
+  const needsLiveCompute = vertical && vertical !== "coffee";
+
   const rows = await prisma.$queryRaw<
     Array<{
       geojson: string;
@@ -31,6 +78,14 @@ export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
       specialty_count_500m: number | null;
       premium_count_500m: number | null;
       mainstream_count_500m: number | null;
+      // Sector columns for live demand computation
+      cns07_retail: number | null;
+      cns09_information: number | null;
+      cns10_finance: number | null;
+      cns11_real_estate: number | null;
+      cns12_professional: number | null;
+      cns13_management: number | null;
+      cns14_administrative: number | null;
     }>
   >`
     SELECT
@@ -51,7 +106,14 @@ export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
       os.gap_score,
       os.specialty_count_500m,
       os.premium_count_500m,
-      os.mainstream_count_500m
+      os.mainstream_count_500m,
+      cb.cns07_retail,
+      cb.cns09_information,
+      cb.cns10_finance,
+      cb.cns11_real_estate,
+      cb.cns12_professional,
+      cb.cns13_management,
+      cb.cns14_administrative
     FROM census_blocks cb
     LEFT JOIN block_hourly_demand bhd
       ON cb.geoid = bhd.census_block_geoid AND bhd.time_window = ${timeWindow}
@@ -59,7 +121,40 @@ export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
       ON cb.geoid = os.census_block_geoid
     WHERE cb.geom IS NOT NULL
       AND ST_Intersects(cb.geom, ST_MakeEnvelope(${bbox.west}, ${bbox.south}, ${bbox.east}, ${bbox.north}, 4326))
+      ${extraWhere}
   `;
+
+  // If non-coffee vertical, recompute demand on the fly using the selected profile
+  let computeFn: ((row: (typeof rows)[number]) => number | null) | null = null;
+  if (needsLiveCompute) {
+    const { computeBlockDemand } = await import("../demand-model");
+    const { getProfile } = await import("../profiles");
+    const profile = getProfile(vertical);
+
+    computeFn = (row) => {
+      const officeJobs =
+        (row.cns10_finance ?? 0) +
+        (row.cns11_real_estate ?? 0) +
+        (row.cns12_professional ?? 0) +
+        (row.cns13_management ?? 0) +
+        (row.cns14_administrative ?? 0) +
+        (row.cns09_information ?? 0);
+      const retailJobs = row.cns07_retail ?? 0;
+
+      const result = computeBlockDemand(
+        {
+          totalJobs: row.total_jobs ?? 0,
+          officeJobs,
+          retailJobs,
+          primaryLandUse: row.primary_land_use,
+          totalResUnits: row.total_residential_units ?? 0,
+          nearestSubwayMeters: row.nearest_subway_meters,
+        },
+        profile,
+      );
+      return result[timeWindow as keyof typeof result] ?? null;
+    };
+  }
 
   return {
     type: "FeatureCollection" as const,
@@ -70,7 +165,7 @@ export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
         geoid: row.geoid,
         ntaName: row.nta_name,
         borough: row.borough,
-        demandScore: row.demand_score,
+        demandScore: computeFn ? computeFn(row) : row.demand_score,
         totalJobs: row.total_jobs,
         totalOfficeSqft: row.total_office_sqft,
         totalResUnits: row.total_residential_units,
@@ -91,7 +186,25 @@ export async function getBlocksInBBox(bbox: BBox, timeWindow: string) {
 /**
  * Fetch competitors in a bounding box as GeoJSON.
  */
-export async function getCompetitorsInBBox(bbox: BBox) {
+export async function getCompetitorsInBBox(bbox: BBox, filters?: CompetitorFilters) {
+  const conditions: Prisma.Sql[] = [];
+
+  if (filters?.tiers && filters.tiers.length > 0 && filters.tiers.length < 3) {
+    conditions.push(Prisma.sql`AND cl.quality_tier = ANY(${filters.tiers})`);
+  }
+  if (filters?.chainFilter === "chain") {
+    conditions.push(Prisma.sql`AND cl.is_chain = true`);
+  } else if (filters?.chainFilter === "independent") {
+    conditions.push(Prisma.sql`AND cl.is_chain = false`);
+  }
+  if (filters?.categories && filters.categories.length > 0) {
+    conditions.push(Prisma.sql`AND cl.category = ANY(${filters.categories})`);
+  }
+
+  const extraWhere = conditions.length > 0
+    ? Prisma.join(conditions, " ")
+    : Prisma.empty;
+
   const rows = await prisma.$queryRaw<
     Array<{
       geojson: string;
@@ -111,6 +224,7 @@ export async function getCompetitorsInBBox(bbox: BBox) {
     FROM competitor_locations cl
     WHERE cl.geom IS NOT NULL
       AND ST_Intersects(cl.geom, ST_MakeEnvelope(${bbox.west}, ${bbox.south}, ${bbox.east}, ${bbox.north}, 4326))
+      ${extraWhere}
   `;
 
   return {

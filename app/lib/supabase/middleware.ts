@@ -29,14 +29,13 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected routes
-  const isProtected =
-    request.nextUrl.pathname.startsWith("/map") ||
-    request.nextUrl.pathname.startsWith("/routes") ||
-    request.nextUrl.pathname.startsWith("/team") ||
-    request.nextUrl.pathname.startsWith("/onboarding");
+  // Public routes that don't require auth
+  const isPublic =
+    request.nextUrl.pathname === "/login" ||
+    request.nextUrl.pathname === "/signup" ||
+    request.nextUrl.pathname.startsWith("/api/");
 
-  if (!user && isProtected) {
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -45,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
     const url = request.nextUrl.clone();
-    url.pathname = "/map";
+    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 

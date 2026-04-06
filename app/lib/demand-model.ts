@@ -3,83 +3,122 @@ import { type DemandProfileConfig, COFFEE_PROFILE } from "./profiles";
 
 /**
  * Hourly demand multiplier curves by PLUTO land use code.
- * These are the default curves — profiles can override via config.
+ * Empirically derived from MTA ridership data (Nov 2024 weekdays) via
+ * spatial walkshed regression against census block features.
  *
- * PLUTO LandUse codes:
- *   01 = One & Two Family Buildings
- *   02 = Multi-Family Walk-Up
- *   03 = Multi-Family Elevator
- *   04 = Mixed Residential & Commercial
- *   05 = Commercial & Office
- *   06 = Industrial & Manufacturing
- *   07 = Transportation & Utility
- *   08 = Public Facilities & Institutions
- *   09 = Open Space & Outdoor Recreation
+ * PLUTO LandUse codes (stored without leading zeros in census_blocks):
+ *   1  = One & Two Family Buildings
+ *   2  = Multi-Family Walk-Up
+ *   3  = Multi-Family Elevator
+ *   4  = Mixed Residential & Commercial
+ *   5  = Commercial & Office
+ *   6  = Industrial & Manufacturing
+ *   7  = Transportation & Utility
+ *   8  = Public Facilities & Institutions
+ *   9  = Open Space & Outdoor Recreation
  *   10 = Parking Facilities
  *   11 = Vacant Land
+ *
+ * Calibration: scripts/calibrate-demand-model.ts
+ * Source data: app/lib/data/calibrated-demand-model.json
  */
 export const LAND_USE_CURVES: Record<string, Record<TimeWindow, number>> = {
-  "01": {
-    "07-09": 0.3, "09-11": 0.1, "11-13": 0.2, "13-15": 0.1,
-    "15-17": 0.2, "17-19": 0.3, "19-21": 0.2,
+  // Residential: sharp AM peak (commuter outflow), evening return
+  "1": {
+    "07-09": 1.0, "09-11": 0.47, "11-13": 0.33, "13-15": 0.40,
+    "15-17": 0.46, "17-19": 0.38, "19-21": 0.18,
   },
-  "02": {
-    "07-09": 0.4, "09-11": 0.1, "11-13": 0.2, "13-15": 0.1,
-    "15-17": 0.2, "17-19": 0.4, "19-21": 0.3,
+  // Multi-family walk-up: AM peak, stronger evening than single-family
+  "2": {
+    "07-09": 1.0, "09-11": 0.58, "11-13": 0.41, "13-15": 0.49,
+    "15-17": 0.62, "17-19": 0.58, "19-21": 0.30,
   },
-  "03": {
-    "07-09": 0.4, "09-11": 0.1, "11-13": 0.2, "13-15": 0.1,
-    "15-17": 0.2, "17-19": 0.4, "19-21": 0.3,
+  // Multi-family elevator: broader curve, PM peak from density
+  "3": {
+    "07-09": 0.89, "09-11": 0.55, "11-13": 0.48, "13-15": 0.61,
+    "15-17": 1.0, "17-19": 0.90, "19-21": 0.42,
   },
-  "04": {
-    "07-09": 0.5, "09-11": 0.7, "11-13": 1.0, "13-15": 0.8,
-    "15-17": 0.6, "17-19": 0.7, "19-21": 0.5,
+  // Mixed res/commercial: evening-dominant (dining, shopping + residents returning)
+  "4": {
+    "07-09": 0.46, "09-11": 0.38, "11-13": 0.39, "13-15": 0.56,
+    "15-17": 0.92, "17-19": 1.0, "19-21": 0.55,
   },
-  "05": {
-    "07-09": 0.4, "09-11": 1.0, "11-13": 0.9, "13-15": 0.8,
-    "15-17": 0.7, "17-19": 0.3, "19-21": 0.1,
+  // Commercial/office: PM peak (end-of-day foot traffic)
+  "5": {
+    "07-09": 0.45, "09-11": 0.36, "11-13": 0.33, "13-15": 0.43,
+    "15-17": 0.73, "17-19": 1.0, "19-21": 0.43,
   },
-  "06": {
-    "07-09": 0.3, "09-11": 0.5, "11-13": 0.6, "13-15": 0.5,
-    "15-17": 0.4, "17-19": 0.2, "19-21": 0.1,
+  // Industrial: bimodal — shift workers arrive AM, leave mid-afternoon
+  "6": {
+    "07-09": 1.0, "09-11": 0.60, "11-13": 0.51, "13-15": 0.69,
+    "15-17": 0.98, "17-19": 0.82, "19-21": 0.38,
   },
-  "07": {
-    "07-09": 1.0, "09-11": 0.3, "11-13": 0.4, "13-15": 0.3,
-    "15-17": 0.5, "17-19": 1.0, "19-21": 0.4,
+  // Transportation/utility: commuter peaks (AM > PM)
+  "7": {
+    "07-09": 1.0, "09-11": 0.46, "11-13": 0.33, "13-15": 0.37,
+    "15-17": 0.44, "17-19": 0.38, "19-21": 0.17,
   },
-  "08": {
-    "07-09": 0.3, "09-11": 0.7, "11-13": 0.8, "13-15": 0.7,
-    "15-17": 0.5, "17-19": 0.3, "19-21": 0.1,
+  // Public facilities: interpolated from regression (insufficient direct sample)
+  "8": {
+    "07-09": 0.50, "09-11": 0.60, "11-13": 0.70, "13-15": 0.80,
+    "15-17": 0.90, "17-19": 1.0, "19-21": 0.45,
   },
-  "09": {
-    "07-09": 0.2, "09-11": 0.3, "11-13": 0.5, "13-15": 0.4,
-    "15-17": 0.3, "17-19": 0.3, "19-21": 0.2,
+  // Open space/recreation: AM peak (joggers, dog walkers), midday lull
+  "9": {
+    "07-09": 1.0, "09-11": 0.48, "11-13": 0.35, "13-15": 0.45,
+    "15-17": 0.52, "17-19": 0.42, "19-21": 0.19,
   },
+  // Parking: tracks residential pattern (arrival/departure)
   "10": {
-    "07-09": 0.2, "09-11": 0.1, "11-13": 0.2, "13-15": 0.1,
-    "15-17": 0.1, "17-19": 0.2, "19-21": 0.1,
+    "07-09": 1.0, "09-11": 0.47, "11-13": 0.33, "13-15": 0.40,
+    "15-17": 0.46, "17-19": 0.38, "19-21": 0.18,
   },
+  // Vacant land: minimal activity
   "11": {
-    "07-09": 0.0, "09-11": 0.0, "11-13": 0.0, "13-15": 0.0,
-    "15-17": 0.0, "17-19": 0.0, "19-21": 0.0,
+    "07-09": 1.0, "09-11": 0.47, "11-13": 0.40, "13-15": 0.49,
+    "15-17": 0.54, "17-19": 0.39, "19-21": 0.20,
   },
 };
 
 /** Default curve for blocks without a known land use code */
 export const DEFAULT_LAND_USE_CURVE: Record<TimeWindow, number> = {
-  "07-09": 0.3, "09-11": 0.5, "11-13": 0.6, "13-15": 0.5,
-  "15-17": 0.4, "17-19": 0.3, "19-21": 0.2,
+  "07-09": 0.80, "09-11": 0.50, "11-13": 0.40, "13-15": 0.50,
+  "15-17": 0.65, "17-19": 0.70, "19-21": 0.35,
 };
 
-/** Default residential demand curve (by time window) */
+/**
+ * Empirical residential demand curve derived from MTA ridership.
+ * Residential areas generate foot traffic mainly at AM (outbound commute)
+ * and PM (return), with midday trough.
+ */
 const RESIDENTIAL_CURVE: Record<TimeWindow, number> = {
-  "07-09": 0.4, "09-11": 0.1, "11-13": 0.1, "13-15": 0.1,
-  "15-17": 0.1, "17-19": 0.3, "19-21": 0.3,
+  "07-09": 1.0, "09-11": 0.50, "11-13": 0.35, "13-15": 0.42,
+  "15-17": 0.52, "17-19": 0.50, "19-21": 0.25,
+};
+
+/**
+ * Empirical sector weight curves derived from OLS regression on MTA data.
+ * Shows how the relative importance of each employment sector changes by
+ * time of day in explaining foot traffic.
+ */
+export const SECTOR_WEIGHT_CURVES: Record<TimeWindow, {
+  office: number; retail: number; other: number; residential: number;
+}> = {
+  "07-09": { office: 0.01, retail: 0.22, other: 0.07, residential: 0.71 },
+  "09-11": { office: 0.12, retail: 0.22, other: 0.07, residential: 0.59 },
+  "11-13": { office: 0.15, retail: 0.24, other: 0.11, residential: 0.49 },
+  "13-15": { office: 0.16, retail: 0.26, other: 0.13, residential: 0.45 },
+  "15-17": { office: 0.20, retail: 0.23, other: 0.19, residential: 0.38 },
+  "17-19": { office: 0.27, retail: 0.23, other: 0.16, residential: 0.34 },
+  "19-21": { office: 0.22, retail: 0.28, other: 0.13, residential: 0.37 },
 };
 
 /**
  * Compute raw hourly demand for a single census block.
- * Accepts an optional profile config to override defaults.
+ * Uses empirically-calibrated sector weights that shift throughout the day:
+ * - Morning: dominated by residential outflow (commuters leaving home)
+ * - Midday: retail and office foot traffic grow
+ * - Evening: office workers leaving, retail/dining peaks
  */
 export function computeBlockDemand(
   block: {
@@ -90,17 +129,19 @@ export function computeBlockDemand(
     totalResUnits: number;
     nearestSubwayMeters: number | null;
   },
-  profile: DemandProfileConfig = COFFEE_PROFILE
+  profile: DemandProfileConfig = COFFEE_PROFILE,
 ): Record<TimeWindow, number> {
   const curve =
     LAND_USE_CURVES[block.primaryLandUse ?? ""] ?? DEFAULT_LAND_USE_CURVE;
 
-  const officeWeight =
-    block.totalJobs > 0 ? block.officeJobs / block.totalJobs : 0;
-
   const transitThreshold = profile.transitProximityM;
   const transitBonusMap = profile.transitBonus;
-  const resMult = profile.residentialMultiplier;
+
+  // Decompose employment sectors
+  const otherJobs = Math.max(
+    block.totalJobs - block.officeJobs - block.retailJobs,
+    0,
+  );
 
   const result: Partial<Record<TimeWindow, number>> = {};
 
@@ -112,14 +153,18 @@ export function computeBlockDemand(
         ? (transitBonusMap[tw] ?? 1.0)
         : 1.0;
 
-    // Office-sector demand: jobs weighted by office fraction and land use curve
-    const officeDemand =
-      block.totalJobs * officeWeight * landUseMultiplier * transitMultiplier;
+    const sw = SECTOR_WEIGHT_CURVES[tw];
 
-    // Residential demand: contribution scaled by profile multiplier
-    const resDemand = block.totalResUnits * RESIDENTIAL_CURVE[tw] * resMult;
+    // Sector-weighted demand: each sector contributes proportionally
+    const officeDemand = block.officeJobs * sw.office * landUseMultiplier;
+    const retailDemand = block.retailJobs * sw.retail * landUseMultiplier;
+    const otherDemand = otherJobs * sw.other * landUseMultiplier;
+    const resDemand = block.totalResUnits * sw.residential * RESIDENTIAL_CURVE[tw];
 
-    result[tw] = officeDemand + resDemand;
+    // Transit proximity amplifies all employment-derived demand
+    const jobDemand = (officeDemand + retailDemand + otherDemand) * transitMultiplier;
+
+    result[tw] = jobDemand + resDemand;
   }
 
   return result as Record<TimeWindow, number>;

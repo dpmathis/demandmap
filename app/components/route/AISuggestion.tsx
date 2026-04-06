@@ -11,6 +11,8 @@ export interface SuggestionData {
   demandScore: number;
   reasoning: string;
   warnings: string[];
+  centroidLat?: number | null;
+  centroidLng?: number | null;
 }
 
 interface AISuggestionProps {

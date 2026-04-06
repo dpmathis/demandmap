@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/app/lib/auth-guard";
 
 const OPEN_METEO_URL =
   `https://api.open-meteo.com/v1/forecast` +
@@ -30,6 +31,9 @@ function weatherIcon(code: number): string {
 }
 
 export async function GET() {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   try {
     const res = await fetch(OPEN_METEO_URL, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return NextResponse.json({ error: "Weather API error" }, { status: 502 });

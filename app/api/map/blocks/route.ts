@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getBlocksInBBox } from "@/app/lib/db/spatial";
+import { getBlocksInBBox, type BlockFilters } from "@/app/lib/db/spatial";
+import { requireAuth } from "@/app/lib/auth-guard";
 
 export async function GET(request: NextRequest) {
+  const { error } = await requireAuth();
+  if (error) return error;
+
   const p = request.nextUrl.searchParams;
   const west = parseFloat(p.get("west") || "");
   const south = parseFloat(p.get("south") || "");
@@ -13,6 +17,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing bbox" }, { status: 400 });
   }
 
-  const data = await getBlocksInBBox({ west, south, east, north }, timeWindow);
+  const filters: BlockFilters = {};
+  const boroughs = p.get("boroughs");
+  if (boroughs) filters.boroughs = boroughs.split(",").filter(Boolean);
+  const maxComp = p.get("maxCompetitors");
+  if (maxComp) filters.maxCompetitors = parseInt(maxComp, 10);
+  const vertical = p.get("vertical") || undefined;
+
+  const data = await getBlocksInBBox({ west, south, east, north }, timeWindow, filters, vertical);
   return NextResponse.json(data);
 }

@@ -76,7 +76,7 @@ export async function geocodeAddress(
 
     const res = await fetch(url, {
       signal: AbortSignal.timeout(5000),
-      headers: { "User-Agent": "DemandMap/1.0" },
+      headers: { "User-Agent": "NYC-DemandMap/1.0" },
     });
     if (!res.ok) return null;
 

@@ -147,8 +147,10 @@ model Tenant {
   defaultVertical String   @default("food_truck") @map("default_vertical")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  users  TenantUser[]
-  routes Route[]
+  users       TenantUser[]
+  routes      Route[]
+  weeklyPlans WeeklyPlan[]
+  savedViews  SavedView[]
 
   @@map("tenants")
 }
@@ -182,8 +184,9 @@ model Route {
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  tenant Tenant     @relation(fields: [tenantId], references: [id])
-  stops  RouteStop[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id])
+  stops            RouteStop[]
+  weeklyPlanSlots  WeeklyPlanSlot[]
 
   @@index([tenantId])
   @@map("routes")
@@ -200,9 +203,138 @@ model RouteStop {
   lng              Float?
   createdAt        DateTime @default(now()) @map("created_at")
 
-  route       Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
-  censusBlock CensusBlock @relation(fields: [censusBlockGeoid], references: [geoid])
+  route          Route              @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  censusBlock    CensusBlock        @relation(fields: [censusBlockGeoid], references: [geoid])
+  performanceLogs StopPerformanceLog[]
 
   @@index([routeId])
   @@map("route_stops")
+}
+
+model StopPerformanceLog {
+  id          String   @id @default(uuid())
+  routeStopId String   @map("route_stop_id")
+  date        DateTime @db.Date
+  revenue     Float?
+  tips        Float?
+  unitsSold   Int?     @map("units_sold")
+  rating      Int?     // 1-5 self-rating of the stop
+  notes       String?
+  weather     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  routeStop RouteStop @relation(fields: [routeStopId], references: [id], onDelete: Cascade)
+
+  @@index([routeStopId])
+  @@index([date])
+  @@map("stop_performance_logs")
+}
+
+model WeeklyPlan {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  name      String
+  weekStart DateTime @map("week_start") @db.Date
+  status    String   @default("draft")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  slots  WeeklyPlanSlot[]
+
+  @@index([tenantId])
+  @@map("weekly_plans")
+}
+
+model SavedView {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  name      String
+  config    Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("saved_views")
+}
+
+model WeeklyPlanSlot {
+  id           String  @id @default(uuid())
+  weeklyPlanId String  @map("weekly_plan_id")
+  routeId      String  @map("route_id")
+  dayOfWeek    Int     @map("day_of_week")
+  timeWindow   String  @map("time_window")
+  assignedTo   String? @map("assigned_to")
+  notes        String?
+
+  weeklyPlan WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  route      Route      @relation(fields: [routeId], references: [id])
+
+  @@index([weeklyPlanId])
+  @@map("weekly_plan_slots")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String?  @map("user_id")
+  type      String   // weather, closure, demand_spike, system
+  title     String
+  body      String
+  metadata  Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model MapAnnotation {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  userName  String?  @map("user_name")
+  lat       Float
+  lng       Float
+  label     String
+  category  String   @default("note") // note, construction, parking, event, hazard
+  color     String   @default("#14b8a6")
+  notes     String?
+  expiresAt DateTime? @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId])
+  @@map("map_annotations")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  userId    String   @map("user_id")
+  userName  String?  @map("user_name")
+  action    String   // created, updated, deleted, cloned, logged_performance
+  entity    String   // route, stop, plan, performance
+  entityId  String?  @map("entity_id")
+  entityName String? @map("entity_name")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@map("activity_logs")
+}
+
+model NotificationPreference {
+  id            String  @id @default(uuid())
+  tenantId      String  @map("tenant_id")
+  userId        String  @map("user_id")
+  weatherAlerts Boolean @default(true)  @map("weather_alerts")
+  closureAlerts Boolean @default(true)  @map("closure_alerts")
+  demandAlerts  Boolean @default(true)  @map("demand_alerts")
+  systemAlerts  Boolean @default(true)  @map("system_alerts")
+
+  @@unique([tenantId, userId])
+  @@map("notification_preferences")
 }

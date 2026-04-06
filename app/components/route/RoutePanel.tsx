@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { X, Download, MapPin, Route, ChevronUp, ChevronDown } from "lucide-react";
+import { BottomSheet } from "@/app/components/ui/BottomSheet";
 import { StopCard, type RouteStopData } from "./StopCard";
 import { AISuggestion, type SuggestionData } from "./AISuggestion";
 import type { TimeWindow } from "@/app/lib/constants";
@@ -157,13 +158,18 @@ export function RoutePanel({
     </>
   );
 
-  // Mobile: bottom sheet
+  // Mobile: swipeable bottom sheet
   if (isMobile) {
     return (
-      <div className="absolute bottom-0 left-0 right-0 z-20 bg-zinc-900/95 backdrop-blur border-t border-zinc-800 rounded-t-2xl">
+      <BottomSheet
+        open={true}
+        onClose={onClose}
+        snapPoints={[25, 55, 90]}
+        title={routeName}
+      >
         {header}
-        {sheetExpanded && body}
-      </div>
+        {body}
+      </BottomSheet>
     );
   }
 

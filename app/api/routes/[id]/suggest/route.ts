@@ -50,6 +50,8 @@ export async function POST(request: Request, { params }: Params) {
       total_jobs: number | null;
       nearest_subway_meters: number | null;
       specialty_count_500m: number | null;
+      centroid_lng: number | null;
+      centroid_lat: number | null;
     }>
   >`
     SELECT
@@ -60,7 +62,9 @@ export async function POST(request: Request, { params }: Params) {
       os.composite_score,
       cb.total_jobs,
       cb.nearest_subway_meters,
-      os.specialty_count_500m
+      os.specialty_count_500m,
+      ST_X(ST_Centroid(cb.geom)) as centroid_lng,
+      ST_Y(ST_Centroid(cb.geom)) as centroid_lat
     FROM census_blocks cb
     LEFT JOIN block_hourly_demand bhd
       ON cb.geoid = bhd.census_block_geoid AND bhd.time_window = ${timeWindow}
@@ -106,6 +110,8 @@ export async function POST(request: Request, { params }: Params) {
     totalJobs: b.total_jobs,
     nearestSubwayMeters: b.nearest_subway_meters,
     specialtyCount500m: b.specialty_count_500m,
+    centroidLng: b.centroid_lng,
+    centroidLat: b.centroid_lat,
   }));
 
   try {
@@ -116,7 +122,16 @@ export async function POST(request: Request, { params }: Params) {
       weather,
       timeWindow,
     });
-    return NextResponse.json({ suggestion });
+
+    // Attach centroid coordinates from the candidate block
+    const matchedBlock = topBlockRows.find((b) => b.geoid === suggestion.geoid);
+    const enriched = {
+      ...suggestion,
+      centroidLat: matchedBlock?.centroid_lat ?? null,
+      centroidLng: matchedBlock?.centroid_lng ?? null,
+    };
+
+    return NextResponse.json({ suggestion: enriched });
   } catch (err) {
     console.error("AI suggestion error:", err);
     return NextResponse.json({ error: "AI suggestion failed" }, { status: 500 });

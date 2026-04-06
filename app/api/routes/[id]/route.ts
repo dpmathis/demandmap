@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { getTenantUser } from "@/app/lib/db/tenant";
 import { prisma } from "@/app/lib/db/prisma";
+import { logActivity } from "@/app/lib/activity";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -45,19 +46,21 @@ export async function PUT(request: Request, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
-  const { name, vertical, status, notes } = body as {
+  const { name, vertical, status, notes, isTemplate } = body as {
     name?: string;
     vertical?: string;
     status?: string;
     notes?: string;
+    isTemplate?: boolean;
   };
 
   const route = await prisma.route.update({
     where: { id },
-    data: { name, vertical, status, notes },
+    data: { name, vertical, status, notes, isTemplate },
     include: { stops: { orderBy: { sortOrder: "asc" } } },
   });
 
+  logActivity({ tenantId: tu.tenantId, userId: user.id, userName: tu.name, action: "updated", entity: "route", entityId: id, entityName: route.name });
   return NextResponse.json({ route });
 }
 
@@ -74,5 +77,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   await prisma.route.delete({ where: { id } });
+  logActivity({ tenantId: tu.tenantId, userId: user.id, userName: tu.name, action: "deleted", entity: "route", entityId: id, entityName: existing.name });
   return NextResponse.json({ ok: true });
 }
