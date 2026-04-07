@@ -290,7 +290,7 @@ function ForecastContent() {
       {/* Split workspace */}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Map */}
-        <section className="w-[60%] lg:w-[65%] relative bg-zinc-950 border-r border-zinc-800">
+        <section className="w-[60%] lg:w-[65%] h-full relative bg-zinc-950 border-r border-zinc-800">
           <ForecastMap
             timeWindow={mapTimeWindow}
             selectedGeoid={selected?.geoid ?? null}

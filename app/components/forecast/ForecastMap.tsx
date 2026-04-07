@@ -106,6 +106,10 @@ export function ForecastMap({
         maxZoom: 18,
       });
 
+      map.on("error", (e: ML) => {
+        console.error("ForecastMap error:", e.error?.message ?? e);
+      });
+
       map.addControl(new maplibregl.NavigationControl({}), "top-right");
 
       map.on("load", () => {
@@ -198,8 +202,8 @@ export function ForecastMap({
   }, [selectedGeoid]);
 
   return (
-    <div className="relative h-full w-full">
-      <div ref={containerRef} className="absolute inset-0" />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div ref={containerRef} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
       {/* Legend overlay */}
       <div className="absolute bottom-4 left-4 z-10 bg-zinc-900/70 backdrop-blur border border-zinc-800 rounded px-3 py-2 flex items-center gap-3 pointer-events-auto">
         <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">Demand</span>
