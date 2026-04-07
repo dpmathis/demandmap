@@ -17,6 +17,8 @@ export interface SelectedZone {
 
 interface ForecastMapProps {
   timeWindow: TimeWindow;
+  /** When "7d", overrides timeWindow with "avg" for the API query */
+  horizon?: "1h" | "today" | "7d";
   selectedGeoid: string | null;
   onZoneSelect: (zone: SelectedZone | null) => void;
   /** called once with the current bbox demand aggregate after each fetch */
@@ -31,6 +33,7 @@ const DEMAND_COLOR: ML = [
 
 export function ForecastMap({
   timeWindow,
+  horizon,
   selectedGeoid,
   onZoneSelect,
   onBboxAggregate,
@@ -40,11 +43,13 @@ export function ForecastMap({
   const onSelectRef = useRef(onZoneSelect);
   const onAggRef = useRef(onBboxAggregate);
   const timeWindowRef = useRef(timeWindow);
+  const horizonRef = useRef(horizon);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => { onSelectRef.current = onZoneSelect; }, [onZoneSelect]);
   useEffect(() => { onAggRef.current = onBboxAggregate; }, [onBboxAggregate]);
   useEffect(() => { timeWindowRef.current = timeWindow; }, [timeWindow]);
+  useEffect(() => { horizonRef.current = horizon; }, [horizon]);
 
   const getBboxParams = useCallback((map: ML) => {
     const bounds = map.getBounds();
@@ -54,7 +59,7 @@ export function ForecastMap({
       south: bounds.getSouth().toString(),
       east: bounds.getEast().toString(),
       north: bounds.getNorth().toString(),
-      timeWindow: timeWindowRef.current,
+      timeWindow: horizonRef.current === "7d" ? "avg" : timeWindowRef.current,
     });
   }, []);
 
@@ -185,12 +190,12 @@ export function ForecastMap({
     };
   }, [fetchBlocks, debouncedFetch]);
 
-  // Refetch when timeWindow changes
+  // Refetch when timeWindow or horizon changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     fetchBlocks(map);
-  }, [timeWindow, fetchBlocks]);
+  }, [timeWindow, horizon, fetchBlocks]);
 
   // Update selected highlight filter
   useEffect(() => {

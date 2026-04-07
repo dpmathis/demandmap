@@ -293,6 +293,7 @@ function ForecastContent() {
         <section className="w-[60%] lg:w-[65%] h-full relative bg-zinc-950 border-r border-zinc-800">
           <ForecastMap
             timeWindow={mapTimeWindow}
+            horizon={horizon}
             selectedGeoid={selected?.geoid ?? null}
             onZoneSelect={handleZoneSelect}
             onBboxAggregate={handleBboxAggregate}

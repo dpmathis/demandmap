@@ -58,71 +58,113 @@ export async function getBlocksInBBox(
 
   const needsLiveCompute = vertical && vertical !== "coffee";
 
-  const rows = await prisma.$queryRaw<
-    Array<{
-      geojson: string;
-      geoid: string;
-      nta_name: string | null;
-      borough: string | null;
-      demand_score: number | null;
-      total_jobs: number | null;
-      total_office_sqft: number | null;
-      total_residential_units: number | null;
-      nearest_subway_meters: number | null;
-      subway_lines: string | null;
-      primary_land_use: string | null;
-      composite_score: number | null;
-      supply_score: number | null;
-      demand_score_opp: number | null;
-      gap_score: number | null;
-      specialty_count_500m: number | null;
-      premium_count_500m: number | null;
-      mainstream_count_500m: number | null;
-      // Sector columns for live demand computation
-      cns07_retail: number | null;
-      cns09_information: number | null;
-      cns10_finance: number | null;
-      cns11_real_estate: number | null;
-      cns12_professional: number | null;
-      cns13_management: number | null;
-      cns14_administrative: number | null;
-    }>
-  >`
-    SELECT
-      ST_AsGeoJSON(cb.geom, 6) as geojson,
-      cb.geoid,
-      cb.nta_name,
-      cb.borough,
-      bhd.demand_score,
-      cb.total_jobs,
-      cb.total_office_sqft,
-      cb.total_residential_units,
-      cb.nearest_subway_meters,
-      cb.subway_lines,
-      cb.primary_land_use,
-      os.composite_score,
-      os.supply_score,
-      os.demand_score as demand_score_opp,
-      os.gap_score,
-      os.specialty_count_500m,
-      os.premium_count_500m,
-      os.mainstream_count_500m,
-      cb.cns07_retail,
-      cb.cns09_information,
-      cb.cns10_finance,
-      cb.cns11_real_estate,
-      cb.cns12_professional,
-      cb.cns13_management,
-      cb.cns14_administrative
-    FROM census_blocks cb
-    LEFT JOIN block_hourly_demand bhd
-      ON cb.geoid = bhd.census_block_geoid AND bhd.time_window = ${timeWindow}
-    LEFT JOIN opportunity_scores os
-      ON cb.geoid = os.census_block_geoid
-    WHERE cb.geom IS NOT NULL
-      AND ST_Intersects(cb.geom, ST_MakeEnvelope(${bbox.west}, ${bbox.south}, ${bbox.east}, ${bbox.north}, 4326))
-      ${extraWhere}
-  `;
+  type BlockRow = {
+    geojson: string;
+    geoid: string;
+    nta_name: string | null;
+    borough: string | null;
+    demand_score: number | null;
+    total_jobs: number | null;
+    total_office_sqft: number | null;
+    total_residential_units: number | null;
+    nearest_subway_meters: number | null;
+    subway_lines: string | null;
+    primary_land_use: string | null;
+    composite_score: number | null;
+    supply_score: number | null;
+    demand_score_opp: number | null;
+    gap_score: number | null;
+    specialty_count_500m: number | null;
+    premium_count_500m: number | null;
+    mainstream_count_500m: number | null;
+    // Sector columns for live demand computation
+    cns07_retail: number | null;
+    cns09_information: number | null;
+    cns10_finance: number | null;
+    cns11_real_estate: number | null;
+    cns12_professional: number | null;
+    cns13_management: number | null;
+    cns14_administrative: number | null;
+  };
+
+  const useAvg = timeWindow === "avg";
+
+  const rows = useAvg
+    ? await prisma.$queryRaw<BlockRow[]>`
+      SELECT
+        ST_AsGeoJSON(cb.geom, 6) as geojson,
+        cb.geoid,
+        cb.nta_name,
+        cb.borough,
+        bhd_avg.demand_score,
+        cb.total_jobs,
+        cb.total_office_sqft,
+        cb.total_residential_units,
+        cb.nearest_subway_meters,
+        cb.subway_lines,
+        cb.primary_land_use,
+        os.composite_score,
+        os.supply_score,
+        os.demand_score as demand_score_opp,
+        os.gap_score,
+        os.specialty_count_500m,
+        os.premium_count_500m,
+        os.mainstream_count_500m,
+        cb.cns07_retail,
+        cb.cns09_information,
+        cb.cns10_finance,
+        cb.cns11_real_estate,
+        cb.cns12_professional,
+        cb.cns13_management,
+        cb.cns14_administrative
+      FROM census_blocks cb
+      LEFT JOIN (
+        SELECT census_block_geoid, AVG(demand_score) as demand_score
+        FROM block_hourly_demand
+        GROUP BY census_block_geoid
+      ) bhd_avg ON cb.geoid = bhd_avg.census_block_geoid
+      LEFT JOIN opportunity_scores os
+        ON cb.geoid = os.census_block_geoid
+      WHERE cb.geom IS NOT NULL
+        AND ST_Intersects(cb.geom, ST_MakeEnvelope(${bbox.west}, ${bbox.south}, ${bbox.east}, ${bbox.north}, 4326))
+        ${extraWhere}
+    `
+    : await prisma.$queryRaw<BlockRow[]>`
+      SELECT
+        ST_AsGeoJSON(cb.geom, 6) as geojson,
+        cb.geoid,
+        cb.nta_name,
+        cb.borough,
+        bhd.demand_score,
+        cb.total_jobs,
+        cb.total_office_sqft,
+        cb.total_residential_units,
+        cb.nearest_subway_meters,
+        cb.subway_lines,
+        cb.primary_land_use,
+        os.composite_score,
+        os.supply_score,
+        os.demand_score as demand_score_opp,
+        os.gap_score,
+        os.specialty_count_500m,
+        os.premium_count_500m,
+        os.mainstream_count_500m,
+        cb.cns07_retail,
+        cb.cns09_information,
+        cb.cns10_finance,
+        cb.cns11_real_estate,
+        cb.cns12_professional,
+        cb.cns13_management,
+        cb.cns14_administrative
+      FROM census_blocks cb
+      LEFT JOIN block_hourly_demand bhd
+        ON cb.geoid = bhd.census_block_geoid AND bhd.time_window = ${timeWindow}
+      LEFT JOIN opportunity_scores os
+        ON cb.geoid = os.census_block_geoid
+      WHERE cb.geom IS NOT NULL
+        AND ST_Intersects(cb.geom, ST_MakeEnvelope(${bbox.west}, ${bbox.south}, ${bbox.east}, ${bbox.north}, 4326))
+        ${extraWhere}
+    `;
 
   // If non-coffee vertical, recompute demand on the fly using the selected profile
   let computeFn: ((row: (typeof rows)[number]) => number | null) | null = null;
@@ -152,6 +194,10 @@ export async function getBlocksInBBox(
         },
         profile,
       );
+      if (useAvg) {
+        const vals = Object.values(result).filter((v): v is number => v != null);
+        return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+      }
       return result[timeWindow as keyof typeof result] ?? null;
     };
   }
