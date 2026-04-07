@@ -30,9 +30,9 @@ function NavContent() {
   const isMobile = useMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Map page uses its own full-screen layout
-  const isMapPage = pathname === "/map";
-  if (isMapPage) return null;
+  // Full-screen pages use their own layout
+  const isFullScreen = pathname === "/map" || pathname === "/forecast";
+  if (isFullScreen) return null;
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -119,13 +119,26 @@ function NavContent() {
   );
 }
 
+function LayoutShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isFullScreen = pathname === "/map" || pathname === "/forecast";
+
+  if (isFullScreen) {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="h-dvh bg-zinc-950 text-white flex flex-col">
+      <NavContent />
+      <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TenantProvider>
-      <div className="h-dvh bg-zinc-950 text-white flex flex-col">
-        <NavContent />
-        <div className="flex-1 min-h-0 overflow-auto">{children}</div>
-      </div>
+      <LayoutShell>{children}</LayoutShell>
     </TenantProvider>
   );
 }

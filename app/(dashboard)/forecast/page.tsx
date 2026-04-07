@@ -2,7 +2,8 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { TrendingUp, TrendingDown, Crosshair, Cloud, CloudRain, CloudSnow, CloudFog, Sun, Zap } from "lucide-react";
+import { TrendingUp, TrendingDown, Crosshair, Cloud, CloudRain, CloudSnow, CloudFog, Sun, Zap, LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut } from "lucide-react";
+import { createClient } from "@/app/lib/supabase/client";
 import {
   TIME_WINDOWS,
   DEFAULT_TIME_WINDOW,
@@ -72,6 +73,7 @@ function dayAverage(windows: Record<string, number | null>): number | null {
 function ForecastContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClient();
 
   const urlGeoid = searchParams.get("geoid");
   const urlHorizon = (searchParams.get("horizon") as Horizon | null) ?? "today";
@@ -181,10 +183,53 @@ function ForecastContent() {
     return b;
   }, [citywideBaselines]);
 
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Top bar */}
-      <div className="h-[52px] shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between px-4 z-40">
+    <div className="h-dvh bg-zinc-950 text-white flex flex-col">
+      {/* Nav bar */}
+      <nav className="flex items-center justify-between px-3 h-11 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
+        <div className="flex items-center gap-2">
+          <span className="flex items-baseline gap-1.5">
+            <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
+            <span className="font-mono text-[10px] text-zinc-500">NYC</span>
+          </span>
+          <div className="flex items-center gap-0.5 ml-3">
+            <button onClick={() => router.push("/")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <LayoutDashboard size={13} /> Dashboard
+            </button>
+            <button onClick={() => router.push("/map")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <Map size={13} /> Explorer
+            </button>
+            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-400">
+              <TrendingUp size={13} /> Forecast
+            </button>
+            <button onClick={() => router.push("/routes")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <Route size={13} /> Routes
+            </button>
+            <button onClick={() => router.push("/planner")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <Calendar size={13} /> Planner
+            </button>
+            <button onClick={() => router.push("/team")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <Users size={13} /> Team
+            </button>
+            <button onClick={() => router.push("/settings")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <Settings size={13} /> Settings
+            </button>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={handleLogout} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+            <LogOut size={13} />
+          </button>
+        </div>
+      </nav>
+
+      {/* Forecast controls bar */}
+      <div className="h-[42px] shrink-0 border-b border-zinc-800 bg-zinc-950 flex items-center justify-between px-4 z-10">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2 text-teal-500">
             <Crosshair size={14} strokeWidth={2.5} />
