@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
-import { LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, ChevronLeft, ChevronRight, Plus, BarChart3, Film, TrendingUp, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, ChevronLeft, ChevronRight, Plus, BarChart3, Film, TrendingUp, MapPin, Search, SlidersHorizontal, MoreVertical, Check } from "lucide-react";
 import { MapSidebar } from "@/app/components/map/MapSidebar";
 import { MapCanvas, type MapActions } from "@/app/components/map/MapCanvas";
 import { RoutePanel } from "@/app/components/route/RoutePanel";
@@ -42,6 +42,7 @@ export default function MapPage() {
   const isMobile = useMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
 
   const [filters, setFilters] = useState<MapFilters>(() => {
     let savedColorMode: ColorMode = "demand";
@@ -276,12 +277,15 @@ export default function MapPage() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {/* Desktop: inline search */}
           {!isMobile && (
             <div className="w-52">
               <MapSearch onFlyTo={(center, zoom) => mapActionsRef.current?.flyTo(center, zoom)} />
             </div>
           )}
+
+          {/* Mobile: search icon */}
           {isMobile && (
             <button
               onClick={() => setMobileSearchOpen((v) => !v)}
@@ -293,47 +297,115 @@ export default function MapPage() {
               <Search size={18} />
             </button>
           )}
-          <button
-            onClick={() => setAnnotationsOpen(!annotationsOpen)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              annotationsOpen ? "bg-amber-500/20 text-amber-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <MapPin size={13} />
-            {!isMobile && "Pins"}
-          </button>
-          <button
-            onClick={() => setTimeLapseActive(!timeLapseActive)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              timeLapseActive ? "bg-teal-500/20 text-teal-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <Film size={13} />
-            {!isMobile && "Time Lapse"}
-          </button>
-          <button
-            onClick={() => setRankingOpen(!rankingOpen)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
-              rankingOpen ? "bg-purple-500/20 text-purple-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <BarChart3 size={13} />
-            {!isMobile && "Ranking"}
-          </button>
+
+          {/* Desktop: separate buttons for Pins / Time Lapse / Ranking */}
+          {!isMobile && (
+            <>
+              <button
+                onClick={() => setAnnotationsOpen(!annotationsOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  annotationsOpen ? "bg-amber-500/20 text-amber-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <MapPin size={13} /> Pins
+              </button>
+              <button
+                onClick={() => setTimeLapseActive(!timeLapseActive)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  timeLapseActive ? "bg-teal-500/20 text-teal-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Film size={13} /> Time Lapse
+              </button>
+              <button
+                onClick={() => setRankingOpen(!rankingOpen)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  rankingOpen ? "bg-purple-500/20 text-purple-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <BarChart3 size={13} /> Ranking
+              </button>
+            </>
+          )}
+
+          {/* Mobile: consolidated view-modes overflow */}
+          {isMobile && (
+            <div className="relative">
+              <button
+                onClick={() => setViewMenuOpen((v) => !v)}
+                className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md transition-all cursor-pointer ${
+                  annotationsOpen || timeLapseActive || rankingOpen || viewMenuOpen
+                    ? "text-teal-400 bg-teal-500/15"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+                aria-label="Map views"
+                aria-expanded={viewMenuOpen}
+              >
+                <MoreVertical size={18} />
+              </button>
+              {viewMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setViewMenuOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 overflow-hidden p-1">
+                    <button
+                      onClick={() => { setAnnotationsOpen(!annotationsOpen); setViewMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
+                    >
+                      <MapPin size={16} className={annotationsOpen ? "text-amber-400" : "text-zinc-500"} />
+                      <span className="flex-1 text-left">Pins</span>
+                      {annotationsOpen && <Check size={14} className="text-amber-400" />}
+                    </button>
+                    <button
+                      onClick={() => { setTimeLapseActive(!timeLapseActive); setViewMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
+                    >
+                      <Film size={16} className={timeLapseActive ? "text-teal-400" : "text-zinc-500"} />
+                      <span className="flex-1 text-left">Time Lapse</span>
+                      {timeLapseActive && <Check size={14} className="text-teal-400" />}
+                    </button>
+                    <button
+                      onClick={() => { setRankingOpen(!rankingOpen); setViewMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
+                    >
+                      <BarChart3 size={16} className={rankingOpen ? "text-purple-400" : "text-zinc-500"} />
+                      <span className="flex-1 text-left">Ranking</span>
+                      {rankingOpen && <Check size={14} className="text-purple-400" />}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Route CTA — pill style on mobile, icon+label on desktop */}
           <button
             onClick={routeOpen ? () => setRouteOpen(false) : openRoute}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-              routeOpen ? "bg-teal-600 text-white" : "bg-teal-500/15 text-teal-400 hover:bg-teal-500/25"
-            }`}
+            className={
+              isMobile
+                ? `flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md transition-all cursor-pointer ${
+                    routeOpen ? "bg-teal-600 text-white" : "text-teal-400 hover:bg-teal-500/15"
+                  }`
+                : `flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                    routeOpen ? "bg-teal-600 text-white" : "bg-teal-500/15 text-teal-400 hover:bg-teal-500/25"
+                  }`
+            }
+            aria-label={routeOpen ? "Close route builder" : "Build route"}
           >
-            <Plus size={13} />
-            {isMobile ? "" : (routeOpen ? "Building" : "Route")}
+            <Plus size={isMobile ? 18 : 13} />
+            {!isMobile && (routeOpen ? "Building" : "Route")}
           </button>
+
+          {/* Notifications (mobile) or Logout (desktop) */}
           {isMobile ? (
             <NotificationBell />
           ) : (
-            <button onClick={handleLogout}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            >
               <LogOut size={13} />
             </button>
           )}
