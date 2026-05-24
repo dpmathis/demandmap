@@ -28,9 +28,10 @@ interface MapSidebarProps {
   onFiltersChange: (partial: Partial<MapFilters>) => void;
   onSaveView?: (name: string) => Promise<SavedViewConfig | null>;
   onLoadView?: (config: SavedViewConfig) => void;
+  embedded?: boolean;
 }
 
-export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }: MapSidebarProps) {
+export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView, embedded = false }: MapSidebarProps) {
   const profile = getProfile(filters.vertical);
 
   const [weatherRisk, setWeatherRisk] = useState<Record<string, string>>({});
@@ -63,7 +64,10 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
   }
 
   return (
-    <aside className="w-[280px] bg-zinc-900/60 backdrop-blur border-r border-zinc-800 flex flex-col shrink-0 overflow-y-auto">
+    <aside className={embedded
+      ? "w-full bg-transparent flex flex-col"
+      : "w-[280px] bg-zinc-900/60 backdrop-blur border-r border-zinc-800 flex flex-col shrink-0 overflow-y-auto"
+    }>
       {/* Saved views */}
       {onSaveView && onLoadView && (
         <div className="p-3 border-b border-zinc-800">

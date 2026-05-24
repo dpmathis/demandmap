@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
-import { LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, ChevronLeft, ChevronRight, Plus, Menu, BarChart3, Film, TrendingUp, MapPin } from "lucide-react";
+import { LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, ChevronLeft, ChevronRight, Plus, BarChart3, Film, TrendingUp, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import { MapSidebar } from "@/app/components/map/MapSidebar";
 import { MapCanvas, type MapActions } from "@/app/components/map/MapCanvas";
 import { RoutePanel } from "@/app/components/route/RoutePanel";
@@ -41,6 +41,7 @@ export default function MapPage() {
   const supabase = createClient();
   const isMobile = useMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const [filters, setFilters] = useState<MapFilters>(() => {
     let savedColorMode: ColorMode = "demand";
@@ -235,8 +236,8 @@ export default function MapPage() {
       <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
         <div className="flex items-center gap-2">
           {isMobile ? (
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 text-zinc-400 cursor-pointer">
-              <Menu size={16} />
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 cursor-pointer" aria-label="Filters">
+              <SlidersHorizontal size={18} />
             </button>
           ) : null}
           <span className="flex items-baseline gap-1.5">
@@ -280,6 +281,17 @@ export default function MapPage() {
             <div className="w-52">
               <MapSearch onFlyTo={(center, zoom) => mapActionsRef.current?.flyTo(center, zoom)} />
             </div>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setMobileSearchOpen((v) => !v)}
+              className={`flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md transition-all cursor-pointer ${
+                mobileSearchOpen ? "text-teal-400 bg-teal-500/15" : "text-zinc-400 hover:text-white"
+              }`}
+              aria-label="Search"
+            >
+              <Search size={18} />
+            </button>
           )}
           <button
             onClick={() => setAnnotationsOpen(!annotationsOpen)}
@@ -328,16 +340,36 @@ export default function MapPage() {
         </div>
       </nav>
 
+      {/* Mobile search row */}
+      {isMobile && mobileSearchOpen && (
+        <div className="px-3 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+          <MapSearch
+            onFlyTo={(center, zoom) => {
+              mapActionsRef.current?.flyTo(center, zoom);
+              setMobileSearchOpen(false);
+            }}
+          />
+        </div>
+      )}
+
       {/* Main content */}
       <div className="flex-1 flex min-h-0 relative">
-        {/* Mobile sidebar overlay */}
+        {/* Mobile sidebar — bottom sheet */}
         {showSidebarMobileOverlay && (
-          <>
-            <div className="absolute inset-0 bg-black/50 z-30" onClick={() => setSidebarOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 z-40 w-[280px]">
-              <MapSidebar filters={filters} onFiltersChange={(p) => { updateFilters(p); setSidebarOpen(false); }} onSaveView={handleSaveView} onLoadView={handleLoadView} />
-            </div>
-          </>
+          <BottomSheet
+            open={true}
+            onClose={() => setSidebarOpen(false)}
+            snapPoints={[50, 85]}
+            title="Filters"
+          >
+            <MapSidebar
+              filters={filters}
+              onFiltersChange={(p) => { updateFilters(p); }}
+              onSaveView={handleSaveView}
+              onLoadView={handleLoadView}
+              embedded
+            />
+          </BottomSheet>
         )}
 
         {/* Desktop sidebar */}
