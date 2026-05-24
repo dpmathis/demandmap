@@ -17,5 +17,11 @@ export async function GET(req: NextRequest) {
   }
 
   const geojson = await getStationsInBBox({ west, south, east, north });
-  return NextResponse.json(geojson);
+  // Subway stations don't move. Cache aggressively at the edge so repeat map
+  // pans don't re-query Neon.
+  return NextResponse.json(geojson, {
+    headers: {
+      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=86400",
+    },
+  });
 }

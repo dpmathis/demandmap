@@ -25,5 +25,12 @@ export async function GET(request: NextRequest) {
   const vertical = p.get("vertical") || undefined;
 
   const data = await getBlocksInBBox({ west, south, east, north }, timeWindow, filters, vertical);
-  return NextResponse.json(data);
+  // Block-level demand is keyed by (bbox + timeWindow + boroughs + vertical) in
+  // the URL — same URL = identical result for ~hours. Cache at the edge so
+  // repeat pans / refreshes skip the spatial query entirely.
+  return NextResponse.json(data, {
+    headers: {
+      "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1800",
+    },
+  });
 }

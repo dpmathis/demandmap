@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { fetchInitialMe, invalidateInitialMe } from "@/app/lib/data/initial";
 
 export type SubscriptionView = {
   tier: "free" | "pro";
@@ -30,6 +31,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [paywallFeature, setPaywallFeature] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // refresh() is called after a purchase — bypass the initial-load cache
+    // and hit the dedicated subscription endpoint
+    invalidateInitialMe();
     try {
       const res = await fetch("/api/me/subscription", { cache: "no-store" });
       if (!res.ok) {
@@ -50,9 +54,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Initial mount: read from the shared /api/me payload so we don't fire a
+  // second round-trip alongside TenantProvider
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+    fetchInitialMe()
+      .then((data) => {
+        if (cancelled) return;
+        setSubscription(data.subscription);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const showPaywall = useCallback((feature?: string) => {
     setPaywallFeature(feature ?? null);

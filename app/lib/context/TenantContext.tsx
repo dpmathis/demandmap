@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { fetchInitialMe } from "@/app/lib/data/initial";
 
 interface TenantUser {
   id: string;
@@ -42,22 +43,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    fetch("/api/me")
-      .then(async (r) => {
-        if (r.status === 404 && pathname !== "/onboarding") {
-          router.replace("/onboarding");
-          return null;
-        }
-        return r.ok ? r.json() : null;
-      })
+    let cancelled = false;
+    fetchInitialMe()
       .then((data) => {
-        if (data) {
-          setUser(data.user);
-          setTenant(data.tenant);
+        if (cancelled) return;
+        if (data.status === 404 && pathname !== "/onboarding") {
+          router.replace("/onboarding");
+          return;
         }
+        setUser(data.user);
+        setTenant(data.tenant);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [pathname, router]);
 
   return (

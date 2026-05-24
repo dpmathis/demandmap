@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/app/lib/supabase/server";
 import { getTenantUser } from "@/app/lib/db/tenant";
+import { getSubscriptionView } from "@/app/lib/db/subscription";
 
 export async function GET() {
   const supabase = await createClient();
@@ -13,6 +14,9 @@ export async function GET() {
   if (!tu) {
     return NextResponse.json({ error: "No tenant" }, { status: 404 });
   }
+
+  // Fetch subscription in parallel with the rest of the response shape
+  const subscription = await getSubscriptionView(tu.tenantId);
 
   return NextResponse.json({
     user: {
@@ -28,5 +32,6 @@ export async function GET() {
       slug: tu.tenant.slug,
       defaultVertical: tu.tenant.defaultVertical,
     },
+    subscription,
   });
 }

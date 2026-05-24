@@ -46,10 +46,14 @@ export function NotificationBell() {
   }, []);
 
   useEffect(() => {
-    loadNotifications();
-    // Poll every 5 minutes
+    // Defer the first fetch ~2.5s so it doesn't compete with critical map +
+    // /api/me requests on cold-start. Then poll every 5 min.
+    const firstFetch = setTimeout(loadNotifications, 2500);
     const interval = setInterval(loadNotifications, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(firstFetch);
+      clearInterval(interval);
+    };
   }, [loadNotifications]);
 
   // Close on outside click

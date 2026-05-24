@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
   if (vertical && vertical in VERTICAL_COMPETITOR_CATEGORIES) {
     const cats = VERTICAL_COMPETITOR_CATEGORIES[vertical];
     if (cats.length === 0) {
-      return NextResponse.json({ type: "FeatureCollection", features: [] });
+      return NextResponse.json(
+        { type: "FeatureCollection", features: [] },
+        { headers: { "Cache-Control": "public, s-maxage=86400" } },
+      );
     }
   }
 
@@ -36,5 +39,11 @@ export async function GET(request: NextRequest) {
   }
 
   const data = await getCompetitorsInBBox({ west, south, east, north }, filters);
-  return NextResponse.json(data);
+  // Competitor locations change slowly (OSM refresh is manual). Cache per
+  // unique URL — same bbox + filters returns identical data for hours.
+  return NextResponse.json(data, {
+    headers: {
+      "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600",
+    },
+  });
 }
