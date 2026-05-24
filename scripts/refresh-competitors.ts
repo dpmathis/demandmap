@@ -102,7 +102,10 @@ async function fetchOverpass(query: string): Promise<OverpassElement[]> {
   console.log("  Querying Overpass API...");
   const res = await fetch(OVERPASS_API, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent": "demandmap/1.0 (dan.mathis@leadershipnowproject.com)",
+    },
     body: `data=${encodeURIComponent(query)}`,
     signal: AbortSignal.timeout(180_000),
   });

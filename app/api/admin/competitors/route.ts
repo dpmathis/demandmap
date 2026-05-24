@@ -86,7 +86,10 @@ export async function POST(request: Request) {
   try {
     const res = await fetch(OVERPASS_API, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "demandmap/1.0 (dan.mathis@leadershipnowproject.com)",
+      },
       body: `data=${encodeURIComponent(config.query)}`,
       signal: AbortSignal.timeout(180_000),
     });
