@@ -3,6 +3,7 @@ import { createClient } from "@/app/lib/supabase/server";
 import { getTenantUser } from "@/app/lib/db/tenant";
 import { prisma } from "@/app/lib/db/prisma";
 import { logActivity } from "@/app/lib/activity";
+import { isPro } from "@/app/lib/db/subscription";
 
 export async function GET() {
   const supabase = await createClient();
@@ -28,6 +29,10 @@ export async function POST(request: Request) {
 
   const tu = await getTenantUser(user.id);
   if (!tu) return NextResponse.json({ error: "No workspace found. Complete onboarding first." }, { status: 403 });
+
+  if (!(await isPro(tu.tenantId))) {
+    return NextResponse.json({ error: "Pro subscription required", code: "paywall" }, { status: 402 });
+  }
 
   const body = await request.json().catch(() => ({}));
   const { name, vertical, date } = body as { name?: string; vertical?: string; date?: string };

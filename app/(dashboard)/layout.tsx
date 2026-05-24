@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import { BottomTabBar } from "@/app/components/BottomTabBar";
+import { Paywall } from "@/app/components/Paywall";
+import { SubscriptionProvider } from "@/app/lib/context/SubscriptionContext";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -117,7 +119,10 @@ function LayoutShell({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <TenantProvider>
-      <LayoutShell>{children}</LayoutShell>
+      <SubscriptionProvider>
+        <LayoutShell>{children}</LayoutShell>
+        <Paywall />
+      </SubscriptionProvider>
     </TenantProvider>
   );
 }

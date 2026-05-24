@@ -292,6 +292,23 @@ model Notification {
   @@map("notifications")
 }
 
+model Subscription {
+  id                     String   @id @default(uuid())
+  tenantId               String   @unique @map("tenant_id")
+  status                 String   @default("none")
+  tier                   String   @default("free")
+  currentPeriodEnd       DateTime? @map("current_period_end")
+  trialEnd               DateTime? @map("trial_end")
+  revenueCatSubscriberId String?  @map("revenuecat_subscriber_id")
+  productIdentifier      String?  @map("product_identifier")
+  store                  String?
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@index([revenueCatSubscriberId])
+  @@map("subscriptions")
+}
+
 model DeviceToken {
   id         String   @id @default(uuid())
   tenantId   String   @map("tenant_id")

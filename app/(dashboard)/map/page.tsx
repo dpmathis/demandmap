@@ -17,6 +17,7 @@ import { BottomSheet } from "@/app/components/ui/BottomSheet";
 import { NotificationBell } from "@/app/components/NotificationBell";
 import type { SavedViewConfig } from "@/app/components/map/SavedViewSelector";
 import { useMobile } from "@/app/lib/hooks/useMobile";
+import { useProGate, useIsPro } from "@/app/lib/context/SubscriptionContext";
 import { DEFAULT_TIME_WINDOW, DEFAULT_WEIGHTS, type TimeWindow, type OpportunityWeights, type ColorMode } from "@/app/lib/constants";
 import type { BlockClickData } from "@/app/components/map/MapCanvas";
 import type { RouteStopData } from "@/app/components/route/StopCard";
@@ -40,6 +41,8 @@ export default function MapPage() {
   const router = useRouter();
   const supabase = createClient();
   const isMobile = useMobile();
+  const proGate = useProGate();
+  const isPro = useIsPro();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
@@ -102,12 +105,27 @@ export default function MapPage() {
   }
 
   function openRoute() {
-    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
-    setRouteName(`Route – ${today}`);
-    setStops([]);
-    setRouteId(null);
-    setRouteOpen(true);
-    if (isMobile) setSidebarOpen(false);
+    proGate("Route Builder", () => {
+      const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      setRouteName(`Route – ${today}`);
+      setStops([]);
+      setRouteId(null);
+      setRouteOpen(true);
+      if (isMobile) setSidebarOpen(false);
+    });
+  }
+
+  function toggleAnnotations() {
+    if (annotationsOpen) { setAnnotationsOpen(false); return; }
+    proGate("Pins & Annotations", () => setAnnotationsOpen(true));
+  }
+  function toggleTimeLapse() {
+    if (timeLapseActive) { setTimeLapseActive(false); return; }
+    proGate("Time Lapse", () => setTimeLapseActive(true));
+  }
+  function toggleRanking() {
+    if (rankingOpen) { setRankingOpen(false); return; }
+    proGate("Neighborhood Ranking", () => setRankingOpen(true));
   }
 
   const handleAddStop = useCallback(async (block: BlockClickData) => {
@@ -304,7 +322,7 @@ export default function MapPage() {
           {!isMobile && (
             <>
               <button
-                onClick={() => setAnnotationsOpen(!annotationsOpen)}
+                onClick={toggleAnnotations}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   annotationsOpen ? "bg-amber-500/20 text-amber-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
                 }`}
@@ -312,7 +330,7 @@ export default function MapPage() {
                 <MapPin size={13} /> Pins
               </button>
               <button
-                onClick={() => setTimeLapseActive(!timeLapseActive)}
+                onClick={toggleTimeLapse}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   timeLapseActive ? "bg-teal-500/20 text-teal-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
                 }`}
@@ -320,7 +338,7 @@ export default function MapPage() {
                 <Film size={13} /> Time Lapse
               </button>
               <button
-                onClick={() => setRankingOpen(!rankingOpen)}
+                onClick={toggleRanking}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   rankingOpen ? "bg-purple-500/20 text-purple-400" : "text-zinc-500 hover:text-white hover:bg-white/5"
                 }`}
@@ -353,28 +371,31 @@ export default function MapPage() {
                   />
                   <div className="absolute right-0 top-full mt-1 w-52 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 overflow-hidden p-1">
                     <button
-                      onClick={() => { setAnnotationsOpen(!annotationsOpen); setViewMenuOpen(false); }}
+                      onClick={() => { toggleAnnotations(); setViewMenuOpen(false); }}
                       className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
                     >
                       <MapPin size={16} className={annotationsOpen ? "text-amber-400" : "text-zinc-500"} />
                       <span className="flex-1 text-left">Pins</span>
                       {annotationsOpen && <Check size={14} className="text-amber-400" />}
+                      {!annotationsOpen && !isPro && <span className="text-[10px] text-teal-400 font-bold tracking-wider">PRO</span>}
                     </button>
                     <button
-                      onClick={() => { setTimeLapseActive(!timeLapseActive); setViewMenuOpen(false); }}
+                      onClick={() => { toggleTimeLapse(); setViewMenuOpen(false); }}
                       className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
                     >
                       <Film size={16} className={timeLapseActive ? "text-teal-400" : "text-zinc-500"} />
                       <span className="flex-1 text-left">Time Lapse</span>
                       {timeLapseActive && <Check size={14} className="text-teal-400" />}
+                      {!timeLapseActive && !isPro && <span className="text-[10px] text-teal-400 font-bold tracking-wider">PRO</span>}
                     </button>
                     <button
-                      onClick={() => { setRankingOpen(!rankingOpen); setViewMenuOpen(false); }}
+                      onClick={() => { toggleRanking(); setViewMenuOpen(false); }}
                       className="w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-sm text-zinc-200 hover:bg-white/5 cursor-pointer"
                     >
                       <BarChart3 size={16} className={rankingOpen ? "text-purple-400" : "text-zinc-500"} />
                       <span className="flex-1 text-left">Ranking</span>
                       {rankingOpen && <Check size={14} className="text-purple-400" />}
+                      {!rankingOpen && !isPro && <span className="text-[10px] text-teal-400 font-bold tracking-wider">PRO</span>}
                     </button>
                   </div>
                 </>
@@ -469,8 +490,8 @@ export default function MapPage() {
             pinnedGeoids={pinnedBlocks.map((b) => b.geoid)}
             onAddStop={routeOpen ? handleAddStop : undefined}
             onBlockInspect={useCallback((block: InspectedBlock) => {
-              setInspectedBlock(block);
-            }, [])}
+              proGate("Block Inspector", () => setInspectedBlock(block));
+            }, [proGate])}
             onMapReady={useCallback((actions: MapActions) => {
               mapActionsRef.current = actions;
               setMapActionsReady((n) => n + 1);
