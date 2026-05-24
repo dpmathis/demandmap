@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { VERTICALS } from "@/app/lib/constants";
 import { Building2, Save, AlertTriangle, Database, RefreshCw, Bell } from "lucide-react";
+import { tapHaptic, notificationHaptic } from "@/app/lib/haptics";
 
 interface SettingsData {
   tenant: { id: string; name: string; slug: string; defaultVertical: string };
@@ -135,9 +136,10 @@ export default function SettingsPage() {
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                onClick={() => tapHaptic("medium")}
+                className="flex items-center gap-1.5 px-5 py-3 min-h-[44px] bg-teal-600 hover:bg-teal-500 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
               >
-                <Save size={12} />
+                <Save size={14} />
                 {saving ? "Saving..." : "Save Changes"}
               </button>
               {msg && (
@@ -297,11 +299,11 @@ function CompetitorDataCard() {
               {CATEGORIES.map((cat) => (
                 <button
                   key={cat.key}
-                  onClick={() => handleRefresh(cat.key)}
+                  onClick={() => { tapHaptic("medium"); handleRefresh(cat.key); }}
                   disabled={refreshing !== null}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-xs rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2.5 min-h-[40px] bg-zinc-800 hover:bg-zinc-700 disabled:opacity-50 text-xs rounded-lg transition-colors cursor-pointer"
                 >
-                  <RefreshCw size={10} className={refreshing === cat.key ? "animate-spin" : ""} />
+                  <RefreshCw size={12} className={refreshing === cat.key ? "animate-spin" : ""} />
                   {cat.label}
                 </button>
               ))}
@@ -377,14 +379,15 @@ function NotificationPrefsCard() {
               <p className="text-[10px] text-zinc-500">{item.description}</p>
             </div>
             <button
-              onClick={() => toggle(item.key)}
-              className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${
+              onClick={() => { tapHaptic("light"); toggle(item.key); }}
+              aria-label={`Toggle ${item.label}`}
+              className={`relative w-12 h-7 rounded-full transition-colors cursor-pointer shrink-0 ${
                 prefs?.[item.key] ? "bg-teal-600" : "bg-zinc-700"
               }`}
             >
               <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                  prefs?.[item.key] ? "translate-x-4" : "translate-x-0.5"
+                className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform shadow ${
+                  prefs?.[item.key] ? "translate-x-6" : "translate-x-1"
                 }`}
               />
             </button>
