@@ -8,7 +8,6 @@
 import WidgetKit
 import SwiftUI
 
-@main
 struct DemandMapWidget: Widget {
     let kind: String = "DemandMapWidget"
 
@@ -19,6 +18,5 @@ struct DemandMapWidget: Widget {
         .configurationDisplayName("Today's Top Demand")
         .description("Where to be in NYC right now.")
         .supportedFamilies([.systemSmall])
-        .contentMarginsDisabled()
     }
 }
