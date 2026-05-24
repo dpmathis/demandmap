@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# tool caches + drafts that aren't part of the codebase
+.aidesigner/
+DemandMap-Launch-Kit/
+PRD_Forecast_Page.md
