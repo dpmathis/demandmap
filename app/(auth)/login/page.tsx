@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/app/lib/supabase/client";
 import { AuthMapTeaser } from "@/app/components/auth/AuthMapTeaser";
+import { tapHaptic, notificationHaptic } from "@/app/lib/haptics";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,21 +29,24 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    tapHaptic("medium");
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
       setLoading(false);
+      notificationHaptic("error");
       return;
     }
+    notificationHaptic("success");
     router.push("/map");
   }
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-zinc-950 lg:flex-row">
       {/* Left: form column */}
-      <div className="relative z-20 flex h-full w-full flex-col justify-between overflow-y-auto border-r border-zinc-800/80 bg-[#0a0f1e] p-8 shadow-[20px_0_40px_rgba(0,0,0,0.5)] lg:w-[40%] lg:p-12 xl:w-[35%] xl:p-16">
+      <div className="relative z-20 flex h-full w-full flex-col justify-between overflow-y-auto border-r border-zinc-800/80 bg-[#0a0f1e] px-8 pt-[calc(2rem+env(safe-area-inset-top))] pb-[calc(2rem+env(safe-area-inset-bottom))] shadow-[20px_0_40px_rgba(0,0,0,0.5)] lg:w-[40%] lg:p-12 xl:w-[35%] xl:p-16">
         {/* Soft teal glow */}
         <div className="pointer-events-none absolute left-0 top-0 h-1/2 w-full bg-teal-900/10 blur-[100px]" />
 

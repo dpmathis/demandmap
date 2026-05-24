@@ -66,11 +66,11 @@ function NavContent() {
   );
 
   return (
-    <nav className="flex items-center justify-between px-3 h-11 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
+    <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
       <div className="flex items-center gap-2">
         {isMobile ? (
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="p-1.5 text-zinc-400 cursor-pointer">
-            {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+          <button onClick={() => setMobileOpen(!mobileOpen)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 cursor-pointer">
+            {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         ) : null}
         <span className="flex items-baseline gap-1.5">
@@ -89,15 +89,16 @@ function NavContent() {
         <NotificationBell />
         <button
           onClick={handleLogout}
-          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-md text-zinc-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+          aria-label="Sign out"
         >
-          <LogOut size={13} />
+          <LogOut size={18} />
         </button>
       </div>
 
       {/* Mobile nav dropdown */}
       {isMobile && mobileOpen && (
-        <div className="absolute top-11 left-0 right-0 bg-zinc-900 border-b border-zinc-800 p-3 z-50 flex flex-col gap-1">
+        <div className="absolute top-[calc(2.75rem+env(safe-area-inset-top))] left-0 right-0 bg-zinc-900 border-b border-zinc-800 px-3 px-safe py-2 z-50 flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const Icon = item.icon;
@@ -105,11 +106,11 @@ function NavContent() {
               <button
                 key={item.href}
                 onClick={() => { router.push(item.href); setMobileOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm cursor-pointer ${
-                  active ? "bg-teal-500/15 text-teal-400" : "text-zinc-400 hover:text-white hover:bg-white/5"
+                className={`flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-base cursor-pointer ${
+                  active ? "bg-teal-500/15 text-teal-400" : "text-zinc-300 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Icon size={16} />
+                <Icon size={18} />
                 {item.label}
               </button>
             );

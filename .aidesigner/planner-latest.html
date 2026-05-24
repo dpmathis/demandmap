@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Ops Terminal // Vanguard Route Planner</title>
+
+    <!--
+    /*
+     * AESTHETIC_DNA: Dark Ops Terminal / Tactical Logistics
+     * UI_PARADIGM: Dense Multi-Pane Grid Workspace with Floating HUDs
+     * PALETTE: Deep Zinc (zinc-950/900), Teal Accent (#14b8a6), AI Violet (#8b5cf6), Alert Rose (#f43f5e)
+     */
+    -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        zinc: {
+                            900: '#18181b',
+                            950: '#09090b',
+                        },
+                        ops: {
+                            teal: '#14b8a6',
+                            violet: '#8b5cf6',
+                            rose: '#f43f5e',
+                            glass: 'rgba(24, 24, 27, 0.7)',
+                        }
+                    },
+                    backgroundImage: {
+                        'striped-alert': 'repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(244,63,94,0.1) 10px, rgba(244,63,94,0.1) 20px)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        .terminal-grid { background-size: 20px 20px; background-image: radial-gradient(circle, #27272a 1px, transparent 1px); }
+        .glass-panel { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .ops-focus:focus-within { outline: none; box-shadow: inset 0 0 0 1px #14b8a6; background: rgba(20, 184, 166, 0.05); }
+        @keyframes pulse-op { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .animate-pulse-op { animation: pulse-op 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .schedule-grid { display: grid; grid-template-columns: 80px repeat(7, minmax(200px, 1fr)); grid-template-rows: 40px repeat(7, minmax(120px, 1fr)); width: fit-content; min-width: 100%; }
+        .sticky-col { position: sticky; left: 0; z-index: 20; background: #09090b; }
+        .sticky-row { position: sticky; top: 0; z-index: 30; background: #09090b; }
+        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 40; background: #09090b; }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-300 h-screen w-screen overflow-hidden flex flex-col selection:bg-ops-teal/30 selection:text-white">
+    <header class="h-14 border-b border-zinc-800/80 flex items-center justify-between px-4 shrink-0 bg-zinc-950 z-50">
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 text-ops-teal"><i class="ph-fill ph-target text-xl"></i><span class="font-mono font-bold text-sm tracking-wider uppercase">Vanguard Ops</span></div>
+            <div class="h-4 w-px bg-zinc-800"></div>
+            <div class="font-mono text-xs text-zinc-500 uppercase flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-ops-teal animate-pulse-op"></div>SYS_ONLINE // NY_DISTRICT</div>
+        </div>
+        <div class="flex items-center bg-zinc-900 rounded-md border border-zinc-800/80 p-0.5">
+            <button class="p-1.5 text-zinc-500 hover:text-zinc-100 transition-colors"><i class="ph ph-caret-left"></i></button>
+            <div class="px-4 py-1 border-x border-zinc-800/50 flex flex-col items-center justify-center cursor-pointer hover:bg-zinc-800/30 transition-colors"><span class="font-mono text-xs font-bold text-zinc-100">WK 42 // OCT 16 — 22</span><span class="font-mono text-[9px] text-zinc-500">2023_Q4</span></div>
+            <button class="p-1.5 text-zinc-500 hover:text-zinc-100 transition-colors"><i class="ph ph-caret-right"></i></button>
+            <button class="px-3 border-l border-zinc-800/50 font-mono text-xs text-zinc-400 hover:text-ops-teal transition-colors">CLONE [C]</button>
+        </div>
+        <div class="flex items-center gap-3">
+            <div class="flex bg-zinc-900 border border-zinc-800/80 rounded-md p-0.5"><button class="px-3 py-1 text-xs font-mono bg-zinc-800 text-white rounded shadow-sm">GRID</button><button class="px-3 py-1 text-xs font-mono text-zinc-500 hover:text-zinc-300">SWIMLANE</button></div>
+            <button class="relative group overflow-hidden px-4 py-1.5 bg-zinc-900 border border-ops-violet/30 rounded-md flex items-center gap-2 hover:border-ops-violet hover:bg-ops-violet/10 transition-all duration-300"><div class="absolute inset-0 bg-gradient-to-r from-ops-violet/0 via-ops-violet/10 to-ops-violet/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div><i class="ph-fill ph-magic-wand text-ops-violet"></i><span class="font-mono text-xs font-bold text-ops-violet tracking-wide">SUGGEST WEEK [AI]</span></button>
+        </div>
+    </header>
+    <main class="flex-1 flex overflow-hidden relative">
+        <aside class="w-[320px] shrink-0 border-r border-zinc-800/80 bg-zinc-950 flex flex-col z-20">
+            <div class="p-3 border-b border-zinc-800/80">
+                <div class="flex justify-between items-center mb-3"><span class="font-mono text-[10px] text-zinc-500 tracking-widest uppercase">Saved Routes [24]</span><button class="text-zinc-500 hover:text-white"><i class="ph ph-sliders"></i></button></div>
+                <div class="relative ops-focus rounded bg-zinc-900 border border-zinc-800 flex items-center px-2 py-1.5"><i class="ph ph-magnifying-glass text-zinc-500 text-sm"></i><input type="text" placeholder="Filter by zone, footprint..." class="bg-transparent border-none text-xs font-mono text-zinc-200 ml-2 w-full focus:outline-none placeholder:text-zinc-600"></div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2">
+                <div class="group relative bg-zinc-900 border border-zinc-800 rounded p-3 hover:border-zinc-700 cursor-grab active:cursor-grabbing transition-colors"><div class="pl-3"><div class="flex justify-between items-start mb-1"><span class="font-mono text-xs font-bold text-zinc-200">FIN_DIST_01</span><span class="font-mono text-[10px] text-emerald-400 bg-emerald-400/10 px-1 rounded">A-TIER</span></div><p class="text-xs text-zinc-400 mb-2 truncate">Wall St & Broad St</p><div class="flex items-center gap-3 font-mono text-[10px] text-zinc-500"><span class="flex items-center gap-1"><i class="ph-fill ph-users"></i> 4.2k/hr</span><span class="flex items-center gap-1"><i class="ph-fill ph-coffee"></i> C-Class</span></div></div></div>
+                <div class="group relative bg-zinc-900 border border-zinc-800 rounded p-3 hover:border-zinc-700 cursor-grab active:cursor-grabbing transition-colors"><div class="pl-3"><div class="flex justify-between items-start mb-1"><span class="font-mono text-xs font-bold text-zinc-200">MIDTOWN_EAST</span><span class="font-mono text-[10px] text-amber-400 bg-amber-400/10 px-1 rounded">B-TIER</span></div><p class="text-xs text-zinc-400 mb-2 truncate">Lexington & 53rd</p><div class="flex items-center gap-3 font-mono text-[10px] text-zinc-500"><span class="flex items-center gap-1"><i class="ph-fill ph-users"></i> 2.8k/hr</span><span class="flex items-center gap-1"><i class="ph-fill ph-hamburger"></i> F-Class</span></div></div></div>
+                <div class="group relative bg-zinc-900 border border-zinc-800 rounded p-3 hover:border-zinc-700 cursor-grab active:cursor-grabbing transition-colors"><div class="pl-3"><div class="flex justify-between items-start mb-1"><span class="font-mono text-xs font-bold text-zinc-200">DUMBO_WATERFRNT</span><span class="font-mono text-[10px] text-emerald-400 bg-emerald-400/10 px-1 rounded">A-TIER</span></div><p class="text-xs text-zinc-400 mb-2 truncate">Washington St @ Water</p><div class="flex items-center gap-3 font-mono text-[10px] text-zinc-500"><span class="flex items-center gap-1"><i class="ph-fill ph-users"></i> 3.5k/hr</span><span class="flex items-center gap-1"><i class="ph-fill ph-storefront"></i> R-Class</span></div></div></div>
+            </div>
+            <button class="p-3 bg-zinc-900/50 hover:bg-zinc-800 transition-colors border-t border-zinc-800 flex items-center justify-center gap-2 group"><i class="ph ph-plus text-zinc-500 group-hover:text-ops-teal"></i><span class="font-mono text-[10px] tracking-wider text-zinc-400 group-hover:text-zinc-200">DEFINE NEW ROUTE</span></button>
+        </aside>
+        <section class="flex-1 overflow-auto bg-zinc-950 relative">
+            <div class="schedule-grid text-zinc-400">
+                <div class="sticky-corner border-b border-r border-zinc-800/80 bg-zinc-950 flex items-end justify-end p-2"><span class="font-mono text-[9px] text-zinc-600 tracking-widest uppercase">Time / Day</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">MON</span><span class="font-mono text-[10px] text-zinc-500">16 OCT</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">TUE</span><span class="font-mono text-[10px] text-zinc-500">17 OCT</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">WED</span><span class="font-mono text-[10px] text-zinc-500">18 OCT</span></div>
+                <div class="sticky-row border-b-2 border-ops-teal bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30 relative"><div class="absolute top-0 right-0 p-1"><div class="w-1.5 h-1.5 bg-ops-teal rounded-full animate-pulse-op"></div></div><span class="font-mono text-xs font-bold text-ops-teal">THU [CUR]</span><span class="font-mono text-[10px] text-zinc-400">19 OCT</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">FRI</span><span class="font-mono text-[10px] text-zinc-500">20 OCT</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">SAT</span><span class="font-mono text-[10px] text-zinc-500">21 OCT</span></div>
+                <div class="sticky-row border-b border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col justify-center px-3 border-r border-zinc-800/30"><span class="font-mono text-xs font-bold text-zinc-100">SUN</span><span class="font-mono text-[10px] text-zinc-500">22 OCT</span></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">0600</span><span class="font-mono text-[8px] text-zinc-600">-0900</span></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-900 border-l-2 border-ops-teal rounded flex flex-col p-2 hover:bg-zinc-800 transition-colors cursor-pointer group shadow-sm shadow-black/50"><div class="flex justify-between items-start"><span class="font-mono text-[11px] font-bold text-zinc-200">FIN_DIST_01</span><i class="ph ph-coffee text-zinc-500 text-[10px]"></i></div><span class="font-sans text-[10px] text-zinc-400 mt-0.5">TRUCK_ALPHA [M. Chen]</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1 hover:bg-zinc-900/20 transition-colors"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1 hover:bg-zinc-900/20 transition-colors"></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-900 border-l-2 border-ops-teal rounded flex flex-col p-2 hover:bg-zinc-800 transition-colors cursor-pointer group"><div class="flex justify-between items-start"><span class="font-mono text-[11px] font-bold text-zinc-200">FIN_DIST_01</span></div><span class="font-sans text-[10px] text-zinc-400 mt-0.5">TRUCK_BRAVO [J. Doe]</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">0900</span><span class="font-mono text-[8px] text-zinc-600">-1200</span></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-ops-violet/5 border border-ops-violet/40 rounded flex flex-col p-2 hover:bg-ops-violet/10 transition-colors cursor-pointer group relative overflow-hidden"><div class="absolute top-0 right-0 w-8 h-8 bg-ops-violet/10 blur-xl"></div><div class="flex justify-between items-start relative z-10"><span class="font-mono text-[11px] font-bold text-ops-violet">MIDTOWN_EAST</span><i class="ph-fill ph-magic-wand text-ops-violet text-[10px]"></i></div><span class="font-sans text-[10px] text-zinc-300 mt-0.5 relative z-10">TRUCK_CHARLIE [Unassigned]</span><div class="mt-auto w-full bg-zinc-950/50 rounded flex items-center justify-center p-0.5 border border-zinc-800 relative z-10"><span class="font-mono text-[8px] text-ops-violet uppercase tracking-wider">AI Pending Acceptance</span></div></div></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-900 border-l-2 border-ops-teal rounded flex flex-col p-2"><span class="font-mono text-[11px] font-bold text-zinc-200">MIDTOWN_EAST</span><span class="font-sans text-[10px] text-zinc-400 mt-0.5">TRUCK_BRAVO</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950 relative"><div class="absolute inset-1 bg-zinc-900 border border-zinc-800 rounded opacity-50 translate-x-1 translate-y-1 z-0"></div><div class="relative h-full w-full bg-striped-alert border border-ops-rose rounded flex flex-col p-2 hover:bg-ops-rose/10 transition-colors cursor-pointer z-10"><div class="absolute -top-1 -right-1 w-3 h-3 bg-zinc-950 rounded-full flex items-center justify-center border border-zinc-800"><div class="w-1.5 h-1.5 bg-ops-rose rounded-full animate-pulse-op"></div></div><div class="flex justify-between items-start"><span class="font-mono text-[11px] font-bold text-ops-rose">DUMBO_WATERFRNT</span><i class="ph-fill ph-warning-octagon text-ops-rose text-[12px]"></i></div><span class="font-sans text-[10px] text-zinc-200 mt-0.5 line-through decoration-ops-rose">TRUCK_ALPHA</span><span class="font-mono text-[8px] bg-ops-rose/20 text-ops-rose px-1 mt-auto rounded w-max">RESOURCE_OVERLAP</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">1200</span><span class="font-mono text-[8px] text-zinc-600">-1500</span></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-900 border-l-2 border-ops-teal rounded p-2"><span class="font-mono text-[11px] font-bold text-zinc-200">DUMBO_WATERFRNT</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-800 border-l-2 border-amber-500 rounded p-2 shadow-inner"><div class="flex justify-between items-start"><span class="font-mono text-[11px] font-bold text-amber-500">CP_SOUTH_EVENT</span><span class="bg-amber-500/20 text-amber-500 text-[8px] px-1 rounded font-mono">HIGH_VOL</span></div><span class="font-sans text-[10px] text-zinc-300 mt-0.5">TRUCK_ALPHA [M. Chen]</span></div></div>
+                <div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-800 border-l-2 border-amber-500 rounded p-2 shadow-inner"><span class="font-mono text-[11px] font-bold text-amber-500">CP_SOUTH_EVENT</span><span class="font-sans text-[10px] text-zinc-300 mt-0.5">TRUCK_ALPHA [M. Chen]</span></div></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">1500</span><span class="font-mono text-[8px] text-zinc-600">-1800</span></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 p-1 bg-zinc-950"><div class="h-full w-full bg-zinc-900 border-l-2 border-ops-teal rounded p-2"><span class="font-mono text-[11px] font-bold">DUMBO_WATERFRNT</span></div></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">1800</span><span class="font-mono text-[8px] text-zinc-600">-2100</span></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+                <div class="sticky-col border-b border-r border-zinc-800/80 bg-zinc-900/90 glass-panel flex flex-col items-end justify-start pt-2 pr-2"><span class="font-mono text-[10px] font-bold text-zinc-300">2100</span><span class="font-mono text-[8px] text-zinc-600">-2400</span></div>
+                <div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div><div class="border-b border-r border-zinc-800/30 terminal-grid p-1"></div>
+            </div>
+        </section>
+        <aside class="absolute top-4 right-4 w-[340px] bg-zinc-950/80 glass-panel border border-ops-violet/30 rounded-lg shadow-2xl shadow-ops-violet/5 flex flex-col z-50 overflow-hidden">
+            <div class="bg-ops-violet/10 p-3 border-b border-ops-violet/20 flex justify-between items-center"><div class="flex items-center gap-2"><i class="ph-fill ph-brain text-ops-violet"></i><span class="font-mono text-xs font-bold text-ops-violet tracking-wide uppercase">Vanguard_AI Opt</span></div><span class="font-mono text-[10px] text-ops-violet/70">M:V-7.2</span></div>
+            <div class="p-4 space-y-4 max-h-[400px] overflow-y-auto">
+                <div class="space-y-1"><span class="font-mono text-[9px] text-zinc-500 uppercase tracking-widest">Status Log ></span><p class="font-mono text-xs text-zinc-300 leading-relaxed border-l-2 border-zinc-800 pl-2">Analyzing historical throughput matrices for WK_42. Weather anomaly detected (Rain expected Wed PM). Adjusting pop-up strategies to covered zones.</p></div>
+                <div class="bg-zinc-900 border border-zinc-800 rounded p-3"><div class="flex items-center gap-2 mb-2"><div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div><span class="font-mono text-[10px] text-zinc-200">SUGGESTION TRACE [WED_0900]</span></div><div class="font-mono text-[11px] text-ops-violet mb-1">↳ ASSIGN: MIDTOWN_EAST</div><ul class="space-y-1 ml-3 border-l px-2 border-zinc-800 font-mono text-[10px] text-zinc-500"><li>+ 42% predicted yield inc via tech conference at Javits.</li><li>+ R-Class vehicle required (Rain cover spec).</li><li>- Avoiding DUMBO (High wind advisory).</li></ul><div class="mt-3 flex gap-2"><button class="flex-1 bg-ops-violet/20 hover:bg-ops-violet/30 text-ops-violet border border-ops-violet/30 rounded py-1 font-mono text-[10px] transition-colors">ACCEPT ALG.</button><button class="px-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded border border-zinc-700 transition-colors"><i class="ph ph-x"></i></button></div></div>
+            </div>
+        </aside>
+    </main>
+</body>
+</html>
