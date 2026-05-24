@@ -15,6 +15,19 @@ export function useNativeBridge() {
       const { Capacitor } = await import("@capacitor/core");
       if (!Capacitor.isNativePlatform()) return;
 
+      // Hide the native splash once React has hydrated. This kills the
+      // splash → black → site flash on cold launch. 3s native fallback in
+      // capacitor.config.ts means we never leave the splash up forever.
+      try {
+        const { SplashScreen } = await import("@capacitor/splash-screen");
+        // One tick lets first paint commit before we fade.
+        requestAnimationFrame(() => {
+          SplashScreen.hide({ fadeOutDuration: 250 }).catch(() => {});
+        });
+      } catch {
+        // splash plugin unavailable — no-op
+      }
+
       const { App } = await import("@capacitor/app");
       const { PushNotifications } = await import("@capacitor/push-notifications");
 

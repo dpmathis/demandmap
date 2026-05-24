@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { WebVitalsReporter } from "./components/WebVitalsReporter";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -42,6 +43,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="h-full overflow-hidden font-sans bg-[#0a0f1e]">
+        <WebVitalsReporter />
         {children}
         <script
           dangerouslySetInnerHTML={{
