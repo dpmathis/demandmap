@@ -89,7 +89,7 @@ export function BlockComparison({ blocks, currentTimeWindow, onUnpin, onClose }:
   }
 
   return (
-    <div className="absolute left-1/2 bottom-4 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-800 rounded-xl backdrop-blur shadow-2xl max-w-[720px] w-[calc(100%-32px)]">
+    <div className="absolute left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-800 rounded-xl backdrop-blur shadow-2xl max-w-[720px] w-[calc(100%-32px)]" style={{ bottom: "calc(1rem + var(--bottom-tab-h))" }}>
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800">
         <div className="flex items-center gap-1.5">
           <Scale size={12} className="text-teal-400" />

@@ -27,6 +27,10 @@ html, body {
   overscroll-behavior: none;
 }
 
+/* Bottom tab bar inset — set by BottomTabBar on mount, used by floating
+   UI on full-screen pages to clear the tab bar. */
+:root { --bottom-tab-h: 0px; }
+
 /* Form inputs: prevent iOS auto-zoom when font-size < 16px */
 @media (max-width: 768px) {
   input[type="email"],

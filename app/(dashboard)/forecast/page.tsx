@@ -14,6 +14,8 @@ import { HorizonSelector, type Horizon } from "@/app/components/forecast/Horizon
 import { HourlyChart } from "@/app/components/forecast/HourlyChart";
 import { ZoneDrilldown } from "@/app/components/forecast/ZoneDrilldown";
 import { WeeklyRhythm } from "@/app/components/forecast/WeeklyRhythm";
+import { useMobile } from "@/app/lib/hooks/useMobile";
+import { NotificationBell } from "@/app/components/NotificationBell";
 
 interface WeatherData {
   current: {
@@ -74,6 +76,7 @@ function ForecastContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
+  const isMobile = useMobile();
 
   const urlGeoid = searchParams.get("geoid");
   const urlHorizon = (searchParams.get("horizon") as Horizon | null) ?? "today";
@@ -191,40 +194,46 @@ function ForecastContent() {
   return (
     <div className="h-dvh bg-zinc-950 text-white flex flex-col">
       {/* Nav bar */}
-      <nav className="flex items-center justify-between px-3 h-11 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
-        <div className="flex items-center gap-2">
-          <span className="flex items-baseline gap-1.5">
+      <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="flex items-baseline gap-1.5 shrink-0">
             <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
             <span className="font-mono text-[10px] text-zinc-500">NYC</span>
           </span>
-          <div className="flex items-center gap-0.5 ml-3">
-            <button onClick={() => router.push("/")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <LayoutDashboard size={13} /> Dashboard
-            </button>
-            <button onClick={() => router.push("/map")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <Map size={13} /> Explorer
-            </button>
-            <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-400">
-              <TrendingUp size={13} /> Forecast
-            </button>
-            <button onClick={() => router.push("/routes")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <Route size={13} /> Routes
-            </button>
-            <button onClick={() => router.push("/planner")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <Calendar size={13} /> Planner
-            </button>
-            <button onClick={() => router.push("/team")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <Users size={13} /> Team
-            </button>
-            <button onClick={() => router.push("/settings")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-              <Settings size={13} /> Settings
-            </button>
-          </div>
+          {!isMobile && (
+            <div className="flex items-center gap-0.5 ml-3">
+              <button onClick={() => router.push("/")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <LayoutDashboard size={13} /> Dashboard
+              </button>
+              <button onClick={() => router.push("/map")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Map size={13} /> Explorer
+              </button>
+              <button className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-teal-500/15 text-teal-400">
+                <TrendingUp size={13} /> Forecast
+              </button>
+              <button onClick={() => router.push("/routes")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Route size={13} /> Routes
+              </button>
+              <button onClick={() => router.push("/planner")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Calendar size={13} /> Planner
+              </button>
+              <button onClick={() => router.push("/team")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Users size={13} /> Team
+              </button>
+              <button onClick={() => router.push("/settings")} className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+                <Settings size={13} /> Settings
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleLogout} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-            <LogOut size={13} />
-          </button>
+          {isMobile ? (
+            <NotificationBell />
+          ) : (
+            <button onClick={handleLogout} className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <LogOut size={13} />
+            </button>
+          )}
         </div>
       </nav>
 

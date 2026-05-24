@@ -14,6 +14,7 @@ import { BlockComparison } from "@/app/components/map/BlockComparison";
 import { MapSearch } from "@/app/components/map/MapSearch";
 import { AnnotationLayer } from "@/app/components/map/AnnotationLayer";
 import { BottomSheet } from "@/app/components/ui/BottomSheet";
+import { NotificationBell } from "@/app/components/NotificationBell";
 import type { SavedViewConfig } from "@/app/components/map/SavedViewSelector";
 import { useMobile } from "@/app/lib/hooks/useMobile";
 import { DEFAULT_TIME_WINDOW, DEFAULT_WEIGHTS, type TimeWindow, type OpportunityWeights, type ColorMode } from "@/app/lib/constants";
@@ -231,7 +232,7 @@ export default function MapPage() {
   return (
     <div className="h-dvh bg-zinc-950 text-white flex flex-col">
       {/* Top nav */}
-      <nav className="flex items-center justify-between px-3 h-11 bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
+      <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
         <div className="flex items-center gap-2">
           {isMobile ? (
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 text-zinc-400 cursor-pointer">
@@ -316,10 +317,14 @@ export default function MapPage() {
             <Plus size={13} />
             {isMobile ? "" : (routeOpen ? "Building" : "Route")}
           </button>
-          <button onClick={handleLogout}
-            className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
-            <LogOut size={13} />
-          </button>
+          {isMobile ? (
+            <NotificationBell />
+          ) : (
+            <button onClick={handleLogout}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer">
+              <LogOut size={13} />
+            </button>
+          )}
         </div>
       </nav>
 

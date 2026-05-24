@@ -108,10 +108,10 @@ export function BottomSheet({
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className={`absolute bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 rounded-t-2xl flex flex-col ${
+        className={`absolute left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 rounded-t-2xl flex flex-col ${
           transitioning ? "transition-all duration-300 ease-out" : ""
         }`}
-        style={{ height: `${heightPct}vh` }}
+        style={{ height: `${heightPct}vh`, bottom: "var(--bottom-tab-h, 0px)" }}
       >
         {/* Drag handle */}
         <div

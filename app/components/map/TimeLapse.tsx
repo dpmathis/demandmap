@@ -110,7 +110,7 @@ export function TimeLapse({ mapActions, onClose, onTimeWindowChange }: TimeLapse
   const currentTw = TIME_WINDOWS[currentIdx];
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-800 rounded-xl px-4 py-3 backdrop-blur shadow-2xl min-w-[520px]">
+    <div className="absolute left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-800 rounded-xl px-4 py-3 backdrop-blur shadow-2xl w-[calc(100vw-2rem)] max-w-[520px]" style={{ bottom: "calc(1rem + var(--bottom-tab-h))" }}>
       <div className="flex items-center gap-3">
         <button
           onClick={() => { tapHaptic("medium"); setPlaying((p) => !p); }}

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Map as MapIcon,
   Route as RouteIcon,
@@ -14,8 +14,10 @@ import {
   Download,
   Users,
   Settings,
+  LogOut,
 } from "lucide-react";
 import { tapHaptic } from "@/app/lib/haptics";
+import { createClient } from "@/app/lib/supabase/client";
 
 type TabItem = {
   href: string;
@@ -42,7 +44,19 @@ const MORE_ITEMS = [
 export function BottomTabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const supabase = createClient();
   const [moreOpen, setMoreOpen] = useState(false);
+
+  // Expose tab-bar height to floating UI on full-screen pages.
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      "--bottom-tab-h",
+      "calc(3.5rem + env(safe-area-inset-bottom))",
+    );
+    return () => {
+      document.documentElement.style.setProperty("--bottom-tab-h", "0px");
+    };
+  }, []);
 
   const moreActive = MORE_ITEMS.some(
     (item) => (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)),
@@ -52,6 +66,13 @@ export function BottomTabBar() {
     tapHaptic("light");
     setMoreOpen(false);
     router.push(href);
+  }
+
+  async function handleLogout() {
+    tapHaptic("medium");
+    setMoreOpen(false);
+    await supabase.auth.signOut();
+    router.push("/login");
   }
 
   return (
@@ -96,6 +117,14 @@ export function BottomTabBar() {
                   </button>
                 );
               })}
+              <div className="my-2 border-t border-zinc-800" />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-3 min-h-[48px] rounded-xl text-base text-left text-zinc-300 hover:bg-white/5 transition-colors"
+              >
+                <LogOut size={20} />
+                Sign out
+              </button>
             </div>
           </div>
         </>
