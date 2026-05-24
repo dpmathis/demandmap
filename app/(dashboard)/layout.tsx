@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/app/lib/supabase/client";
 import { TenantProvider, useTenant } from "@/app/lib/context/TenantContext";
 import { useMobile } from "@/app/lib/hooks/useMobile";
+import { useNativeBridge } from "@/app/lib/hooks/useNativeBridge";
 import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, Menu, X, TrendingUp, BarChart3, Download,
@@ -122,6 +123,7 @@ function NavContent() {
 function LayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isFullScreen = pathname === "/map" || pathname === "/forecast";
+  useNativeBridge();
 
   if (isFullScreen) {
     return <>{children}</>;

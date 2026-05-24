@@ -292,6 +292,23 @@ model Notification {
   @@map("notifications")
 }
 
+model DeviceToken {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  userId     String   @map("user_id")
+  platform   String
+  token      String
+  appVersion String?  @map("app_version")
+  osVersion  String?  @map("os_version")
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+
+  @@unique([platform, token])
+  @@index([tenantId, userId])
+  @@index([userId])
+  @@map("device_tokens")
+}
+
 model MapAnnotation {
   id        String   @id @default(uuid())
   tenantId  String   @map("tenant_id")
