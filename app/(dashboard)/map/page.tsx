@@ -241,10 +241,12 @@ export default function MapPage() {
               <SlidersHorizontal size={18} />
             </button>
           ) : null}
-          <span className="flex items-baseline gap-1.5">
-            <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
-            <span className="font-mono text-[10px] text-zinc-500">NYC</span>
-          </span>
+          {!isMobile && (
+            <span className="flex items-baseline gap-1.5">
+              <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
+              <span className="font-mono text-[10px] text-zinc-500">NYC</span>
+            </span>
+          )}
           {!isMobile && (
             <div className="flex items-center gap-0.5 ml-3">
               <button onClick={() => router.push("/")}

@@ -41,10 +41,12 @@ function TopNav() {
   return (
     <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
       <div className="flex items-center gap-2 min-w-0">
-        <span className="flex items-baseline gap-1.5 shrink-0">
-          <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
-          <span className="font-mono text-[10px] text-zinc-500">NYC</span>
-        </span>
+        {!isMobile && (
+          <span className="flex items-baseline gap-1.5 shrink-0">
+            <span className="text-base font-semibold tracking-tight text-zinc-100">DemandMap</span>
+            <span className="font-mono text-[10px] text-zinc-500">NYC</span>
+          </span>
+        )}
         {!isMobile && (
           <div className="ml-3 flex items-center gap-0.5">
             {NAV_ITEMS.map((item) => {
