@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { invalidateInitialMe } from "@/app/lib/data/initial";
 
 const VERTICALS = [
   { value: "coffee", label: "Coffee / Beverage", emoji: "&#9749;" },
@@ -44,6 +45,10 @@ export default function OnboardingPage() {
         body: JSON.stringify({ name, orgName, vertical }),
       });
     } catch { /* silent */ }
+    // Bust the shared /api/me cache so TenantProvider refetches the new
+    // tenant on the next route mount instead of replaying the stale 404
+    // that triggered this onboarding flow.
+    invalidateInitialMe();
     router.push("/map");
   }
 

@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { fetchInitialMe } from "@/app/lib/data/initial";
+import { fetchInitialMe, invalidateInitialMe } from "@/app/lib/data/initial";
+import { createClient } from "@/app/lib/supabase/client";
 
 interface TenantUser {
   id: string;
@@ -60,6 +61,31 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, [pathname, router]);
+
+  // React to auth state changes (sign-out, sign-in as different user) so the
+  // shared /api/me cache doesn't leak stale identity across sessions. Skips
+  // INITIAL_SESSION + TOKEN_REFRESHED — those don't change user identity.
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        invalidateInitialMe();
+        setUser(null);
+        setTenant(null);
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        invalidateInitialMe();
+        fetchInitialMe().then((data) => {
+          if (data.status === 404 && pathname !== "/onboarding") {
+            router.replace("/onboarding");
+            return;
+          }
+          setUser(data.user);
+          setTenant(data.tenant);
+        });
+      }
+    });
+    return () => subscription.unsubscribe();
   }, [pathname, router]);
 
   return (

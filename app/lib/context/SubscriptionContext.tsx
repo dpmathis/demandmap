@@ -2,6 +2,16 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
 import { fetchInitialMe, invalidateInitialMe } from "@/app/lib/data/initial";
+import { createClient } from "@/app/lib/supabase/client";
+
+const EMPTY_SUBSCRIPTION: SubscriptionView = {
+  tier: "free",
+  status: "none",
+  currentPeriodEnd: null,
+  trialEnd: null,
+  isInTrial: false,
+  isActive: false,
+};
 
 export type SubscriptionView = {
   tier: "free" | "pro";
@@ -69,6 +79,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // React to auth state changes — don't serve the previous user's subscription
+  // tier across a sign-out / sign-in within the same SPA session.
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        invalidateInitialMe();
+        setSubscription(EMPTY_SUBSCRIPTION);
+      } else if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        invalidateInitialMe();
+        fetchInitialMe().then((data) => setSubscription(data.subscription));
+      }
+    });
+    return () => authSub.unsubscribe();
   }, []);
 
   const showPaywall = useCallback((feature?: string) => {
