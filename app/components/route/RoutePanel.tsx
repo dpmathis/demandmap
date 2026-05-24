@@ -6,6 +6,7 @@ import { BottomSheet } from "@/app/components/ui/BottomSheet";
 import { StopCard, type RouteStopData } from "./StopCard";
 import { AISuggestion, type SuggestionData } from "./AISuggestion";
 import type { TimeWindow } from "@/app/lib/constants";
+import { tapHaptic } from "@/app/lib/haptics";
 
 interface RoutePanelProps {
   routeId: string | null;
@@ -80,8 +81,8 @@ export function RoutePanel({
     <div className="p-3 border-b border-zinc-800 flex items-center gap-2">
       {isMobile ? (
         <button
-          onClick={() => setSheetExpanded(!sheetExpanded)}
-          className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer"
+          onClick={() => { tapHaptic("light"); setSheetExpanded(!sheetExpanded); }}
+          className="flex items-center gap-2 flex-1 min-w-0 min-h-[44px] cursor-pointer"
         >
           <Route size={13} className="text-teal-400 shrink-0" />
           <span className="text-xs font-semibold text-white truncate">{routeName}</span>
@@ -112,12 +113,12 @@ export function RoutePanel({
       )}
       <div className="flex items-center gap-1 shrink-0">
         {routeId && (
-          <button onClick={handleExport} className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer" title="Export CSV">
-            <Download size={13} />
+          <button onClick={() => { tapHaptic("medium"); handleExport(); }} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer" title="Export CSV">
+            <Download size={16} />
           </button>
         )}
-        <button onClick={onClose} className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer">
-          <X size={13} />
+        <button onClick={() => { tapHaptic("light"); onClose(); }} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer">
+          <X size={16} />
         </button>
       </div>
     </div>

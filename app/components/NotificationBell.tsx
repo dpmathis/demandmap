@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Bell, X, Check, CloudRain, Construction, TrendingUp, Info, Route } from "lucide-react";
+import { tapHaptic } from "@/app/lib/haptics";
 
 interface NotificationItem {
   id: string;
@@ -97,10 +98,10 @@ export function NotificationBell() {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(!open)}
-        className="relative p-1.5 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+        onClick={() => { tapHaptic("light"); setOpen(!open); }}
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
       >
-        <Bell size={15} />
+        <Bell size={18} />
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-teal-500 rounded-full text-[8px] font-bold flex items-center justify-center text-black">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -123,7 +124,7 @@ export function NotificationBell() {
                 </button>
               )}
               <button
-                onClick={() => setOpen(false)}
+                onClick={() => { tapHaptic("light"); setOpen(false); }}
                 className="p-0.5 text-zinc-600 hover:text-white cursor-pointer"
               >
                 <X size={12} />

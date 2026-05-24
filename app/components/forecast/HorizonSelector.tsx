@@ -1,5 +1,7 @@
 "use client";
 
+import { selectionHaptic } from "@/app/lib/haptics";
+
 export type Horizon = "1h" | "today" | "7d";
 
 interface HorizonSelectorProps {
@@ -19,7 +21,7 @@ export function HorizonSelector({ value, onChange }: HorizonSelectorProps) {
       {OPTIONS.map((opt) => (
         <button
           key={opt.value}
-          onClick={() => !opt.disabled && onChange(opt.value)}
+          onClick={() => { if (opt.disabled) return; selectionHaptic(); onChange(opt.value); }}
           disabled={opt.disabled}
           className={`px-3 py-1 rounded-sm transition-colors ${
             opt.disabled

@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { tapHaptic } from "@/app/lib/haptics";
 
 interface WeekNavProps {
   weekStart: Date;
@@ -43,14 +44,14 @@ export function WeekNav({ weekStart, onChange }: WeekNavProps) {
   return (
     <div className="flex items-center bg-zinc-900 rounded-md border border-zinc-800 p-0.5">
       <button
-        onClick={() => shift(-7)}
+        onClick={() => { tapHaptic("light"); shift(-7); }}
         className="p-1.5 text-zinc-500 hover:text-zinc-100 transition-colors cursor-pointer"
         aria-label="Previous week"
       >
         <ChevronLeft size={14} />
       </button>
       <button
-        onClick={toThisWeek}
+        onClick={() => { tapHaptic("medium"); toThisWeek(); }}
         className="px-4 py-1 border-x border-zinc-800 flex flex-col items-center justify-center hover:bg-zinc-800/40 transition-colors cursor-pointer"
         title="Jump to current week"
       >
@@ -62,7 +63,7 @@ export function WeekNav({ weekStart, onChange }: WeekNavProps) {
         </span>
       </button>
       <button
-        onClick={() => shift(7)}
+        onClick={() => { tapHaptic("light"); shift(7); }}
         className="p-1.5 text-zinc-500 hover:text-zinc-100 transition-colors cursor-pointer"
         aria-label="Next week"
       >

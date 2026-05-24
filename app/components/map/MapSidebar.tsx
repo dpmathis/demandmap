@@ -6,6 +6,7 @@ import { getProfile } from "@/app/lib/profiles";
 import type { MapFilters } from "@/app/(dashboard)/map/page";
 import { SavedViewSelector, type SavedViewConfig } from "@/app/components/map/SavedViewSelector";
 import { Compass, Clock, Layers, SlidersHorizontal, Palette, MapPin, Store, Sparkles } from "lucide-react";
+import { selectionHaptic, tapHaptic } from "@/app/lib/haptics";
 
 const BOROUGHS = ["Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"];
 const TIERS = [
@@ -98,7 +99,7 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
           {COLOR_MODES.map((mode) => (
             <button
               key={mode}
-              onClick={() => onFiltersChange({ colorMode: mode })}
+              onClick={() => { selectionHaptic(); onFiltersChange({ colorMode: mode }); }}
               className={`px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
                 filters.colorMode === mode
                   ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
@@ -146,7 +147,7 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
             return (
               <button
                 key={tw}
-                onClick={() => onFiltersChange({ timeWindow: tw as TimeWindow })}
+                onClick={() => { selectionHaptic(); onFiltersChange({ timeWindow: tw as TimeWindow }); }}
                 className={`relative px-1.5 py-1.5 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
                   filters.timeWindow === tw
                     ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
@@ -195,7 +196,7 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
           {BOROUGHS.map((b) => (
             <button
               key={b}
-              onClick={() => toggleBorough(b)}
+              onClick={() => { selectionHaptic(); toggleBorough(b); }}
               className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer ${
                 filters.boroughs.size === 0 || filters.boroughs.has(b)
                   ? "bg-teal-500/20 text-teal-400 border border-teal-500/30"
@@ -207,7 +208,7 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
           ))}
           {filters.boroughs.size > 0 && (
             <button
-              onClick={() => onFiltersChange({ boroughs: new Set() })}
+              onClick={() => { tapHaptic("light"); onFiltersChange({ boroughs: new Set() }); }}
               className="px-2 py-1 rounded-lg text-[10px] text-zinc-600 hover:text-zinc-400 cursor-pointer"
             >
               Clear
@@ -244,7 +245,7 @@ export function MapSidebar({ filters, onFiltersChange, onSaveView, onLoadView }:
           {(["all", "chain", "independent"] as const).map((opt) => (
             <button
               key={opt}
-              onClick={() => onFiltersChange({ chainFilter: opt })}
+              onClick={() => { selectionHaptic(); onFiltersChange({ chainFilter: opt }); }}
               className={`flex-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer capitalize ${
                 filters.chainFilter === opt
                   ? "bg-teal-500/20 text-teal-400"

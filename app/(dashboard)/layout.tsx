@@ -5,6 +5,7 @@ import { createClient } from "@/app/lib/supabase/client";
 import { TenantProvider, useTenant } from "@/app/lib/context/TenantContext";
 import { useMobile } from "@/app/lib/hooks/useMobile";
 import { useNativeBridge } from "@/app/lib/hooks/useNativeBridge";
+import { tapHaptic } from "@/app/lib/haptics";
 import { useState, type ReactNode } from "react";
 import {
   LayoutDashboard, Map, Route, Calendar, Users, Settings, LogOut, Menu, X, TrendingUp, BarChart3, Download,
@@ -36,6 +37,7 @@ function NavContent() {
   if (isFullScreen) return null;
 
   async function handleLogout() {
+    tapHaptic("medium");
     await supabase.auth.signOut();
     router.push("/login");
   }
@@ -50,7 +52,7 @@ function NavContent() {
         return (
           <button
             key={item.href}
-            onClick={() => { router.push(item.href); setMobileOpen(false); }}
+            onClick={() => { tapHaptic("light"); router.push(item.href); setMobileOpen(false); }}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
               active
                 ? "bg-teal-500/15 text-teal-400"
@@ -69,7 +71,7 @@ function NavContent() {
     <nav className="flex items-center justify-between px-3 px-safe pt-safe h-[calc(2.75rem+env(safe-area-inset-top))] bg-zinc-900/80 backdrop-blur border-b border-zinc-800 shrink-0 z-20">
       <div className="flex items-center gap-2">
         {isMobile ? (
-          <button onClick={() => setMobileOpen(!mobileOpen)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 cursor-pointer">
+          <button onClick={() => { tapHaptic("light"); setMobileOpen(!mobileOpen); }} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-zinc-400 cursor-pointer">
             {mobileOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
         ) : null}
@@ -105,7 +107,7 @@ function NavContent() {
             return (
               <button
                 key={item.href}
-                onClick={() => { router.push(item.href); setMobileOpen(false); }}
+                onClick={() => { tapHaptic("light"); router.push(item.href); setMobileOpen(false); }}
                 className={`flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-lg text-base cursor-pointer ${
                   active ? "bg-teal-500/15 text-teal-400" : "text-zinc-300 hover:text-white hover:bg-white/5"
                 }`}

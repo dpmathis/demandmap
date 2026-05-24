@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, MapPin, Train, Building2, Plus, Pin, PinOff } from "lucide-react";
 import { TIME_WINDOWS, TIME_WINDOW_LABELS, type TimeWindow } from "@/app/lib/constants";
+import { tapHaptic } from "@/app/lib/haptics";
 
 export interface InspectedBlock {
   geoid: string;
@@ -68,7 +69,7 @@ export function BlockInspector({ block, currentTimeWindow, isPinned, canPin, onC
           <div className="flex items-center gap-1">
             {onTogglePin && (
               <button
-                onClick={onTogglePin}
+                onClick={() => { tapHaptic("light"); onTogglePin(); }}
                 disabled={!isPinned && !canPin}
                 title={isPinned ? "Unpin from compare" : canPin ? "Pin to compare" : "Pin 3 blocks max"}
                 className={`p-1 transition-colors cursor-pointer disabled:cursor-not-allowed ${
@@ -78,7 +79,7 @@ export function BlockInspector({ block, currentTimeWindow, isPinned, canPin, onC
                 {isPinned ? <PinOff size={14} /> : <Pin size={14} />}
               </button>
             )}
-            <button onClick={onClose} className="p-1 text-zinc-500 hover:text-white cursor-pointer">
+            <button onClick={() => { tapHaptic("light"); onClose(); }} className="p-1 text-zinc-500 hover:text-white cursor-pointer">
               <X size={14} />
             </button>
           </div>
@@ -200,10 +201,10 @@ export function BlockInspector({ block, currentTimeWindow, isPinned, canPin, onC
       {onAddToRoute && (
         <div className="p-4">
           <button
-            onClick={onAddToRoute}
-            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+            onClick={() => { tapHaptic("medium"); onAddToRoute(); }}
+            className="w-full flex items-center justify-center gap-1.5 px-3 py-3 min-h-[44px] bg-teal-600 hover:bg-teal-500 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
           >
-            <Plus size={13} /> Add to Route
+            <Plus size={15} /> Add to Route
           </button>
         </div>
       )}

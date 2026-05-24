@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Play, Pause, X, Loader2 } from "lucide-react";
 import { TIME_WINDOWS, TIME_WINDOW_LABELS, type TimeWindow } from "@/app/lib/constants";
 import type { MapActions } from "./MapCanvas";
+import { tapHaptic, selectionHaptic } from "@/app/lib/haptics";
 
 interface TimeLapseProps {
   mapActions: MapActions | null;
@@ -112,7 +113,7 @@ export function TimeLapse({ mapActions, onClose, onTimeWindowChange }: TimeLapse
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-zinc-900/95 border border-zinc-800 rounded-xl px-4 py-3 backdrop-blur shadow-2xl min-w-[520px]">
       <div className="flex items-center gap-3">
         <button
-          onClick={() => setPlaying((p) => !p)}
+          onClick={() => { tapHaptic("medium"); setPlaying((p) => !p); }}
           disabled={!ready}
           className="flex items-center justify-center w-8 h-8 bg-teal-600 hover:bg-teal-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed"
         >
@@ -134,7 +135,7 @@ export function TimeLapse({ mapActions, onClose, onTimeWindowChange }: TimeLapse
             {TIME_WINDOWS.map((tw, i) => (
               <button
                 key={tw}
-                onClick={() => handleScrub(i)}
+                onClick={() => { selectionHaptic(); handleScrub(i); }}
                 disabled={!ready}
                 className={`flex-1 h-1.5 rounded-full transition-colors cursor-pointer disabled:cursor-not-allowed ${
                   i === currentIdx ? "bg-teal-400" : i < currentIdx ? "bg-teal-700/50" : "bg-zinc-700"
@@ -148,7 +149,7 @@ export function TimeLapse({ mapActions, onClose, onTimeWindowChange }: TimeLapse
           {SPEEDS.map((s) => (
             <button
               key={s.value}
-              onClick={() => setSpeed(s.value)}
+              onClick={() => { selectionHaptic(); setSpeed(s.value); }}
               className={`px-2 py-1 rounded-md text-[10px] font-medium transition-colors cursor-pointer ${
                 speed === s.value ? "bg-teal-500/20 text-teal-400" : "text-zinc-500 hover:text-zinc-300"
               }`}
@@ -159,7 +160,7 @@ export function TimeLapse({ mapActions, onClose, onTimeWindowChange }: TimeLapse
         </div>
 
         <button
-          onClick={onClose}
+          onClick={() => { tapHaptic("light"); onClose(); }}
           className="p-1.5 text-zinc-500 hover:text-white transition-colors cursor-pointer"
         >
           <X size={14} />
